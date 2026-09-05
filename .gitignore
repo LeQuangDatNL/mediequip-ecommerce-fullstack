@@ -1,0 +1,70 @@
+# ==========================================
+# GITHUB & PROJECT ROOT .GITIGNORE
+# ==========================================
+
+# 1. Java & Spring Boot (Backend)
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+replay_pid*
+
+# Maven
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+**/mvnw
+**/mvnw.cmd
+
+# 2. Node.js & React / Vite (Frontend)
+**/node_modules/
+**/dist/
+**/dist-ssr/
+*.local
+.npm
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+.vite/
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# 3. IDE & Code Editors
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# 4. Logs & Temp
+*.log
+**/logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 5. Agent & Scratch Artifacts
+.system_generated/
+scratch/

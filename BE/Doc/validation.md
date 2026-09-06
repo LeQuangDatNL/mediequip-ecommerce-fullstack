@@ -1,4 +1,3 @@
-placeholder
 # 📋 TÀI LIỆU QUY CHUẨN VALIDATION & BẢO VỆ CHỐNG SPAM (ANTI-SPAM SPECIFICATION)
 
 ---

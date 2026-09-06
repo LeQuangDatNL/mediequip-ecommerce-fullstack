@@ -38,6 +38,10 @@ replay_pid*
 !.env.example
 *.pem
 *.key
+**/application-dev.properties
+**/application-local.properties
+**/application-*.properties
+!**/application.properties
 
 # 3. IDE & Code Editors
 .idea/

@@ -215,7 +215,7 @@ Backend tích hợp sẵn giao diện Swagger UI OpenAPI 3.0:
 
 | Quyền hạn | Tên đăng nhập / Email | Mật khẩu mặc định | Phạm vi quyền hạn |
 |---|---|---|---|
-| 👑 **Quản trị viên (Admin)** | `admin` / `admin@shop.vn` | `123456` | Toàn quyền quản trị: Dashboard, Sản phẩm, Excel Import, Đơn hàng, Yêu cầu báo giá |
+|  **Quản trị viên (Admin)** | `admin` / `admin@shop.vn` | `123456` | Toàn quyền quản trị: Dashboard, Sản phẩm, Excel Import, Đơn hàng, Yêu cầu báo giá |
 | 👤 **Khách hàng (User)** | `nguyenvana` / `nguyenvana@gmail.com` | `123456` | Mua sắm thiết bị, giỏ hàng, gửi đơn báo giá, theo dõi đơn cá nhân, lưu yêu thích |
 
 ---

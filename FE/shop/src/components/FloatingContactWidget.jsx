@@ -13,9 +13,9 @@ export const FloatingContactWidget = () => {
   const [isOpen, setIsOpen] = useState(true);
 
   // Số Zalo, Messenger & Hotline
-  const ZALO_URL = 'https://zalo.me/0901000003';
-  const MESSENGER_URL = 'https://m.me/mediequip';
-  const HOTLINE_TEL = 'tel:19001234';
+  const ZALO_URL = 'https://zalo.me/0914066662';
+  const MESSENGER_URL = 'https://www.facebook.com/kim.lien.ngo.304193';
+  const HOTLINE_TEL = 'tel:0914066662';
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 select-none">
@@ -30,13 +30,13 @@ export const FloatingContactWidget = () => {
         {/* 1. NÚT GỌI HOTLINE */}
         <div className="relative group flex items-center gap-2.5">
           <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg whitespace-nowrap pointer-events-none">
-            Hotline: 1900 1234 (8h - 21h)
+            Hotline: 0914 066 662 (8h - 21h)
           </span>
 
           <a
             href={HOTLINE_TEL}
             className="relative w-12 h-12 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center shadow-lg hover:shadow-emerald-500/50 hover:scale-110 transition duration-300"
-            title="Gọi Hotline 1900 1234"
+            title="Gọi Hotline 0914 066 662"
           >
             {/* Vòng xung nhịp rung */}
             <span className="absolute inset-0 rounded-full bg-emerald-400 opacity-75 animate-ping"></span>

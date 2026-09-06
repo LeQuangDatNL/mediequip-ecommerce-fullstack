@@ -37,69 +37,96 @@ export const MapAddressPicker = ({ isOpen, onClose, onSelectAddress, initialCoor
 
   // Khởi tạo và quản lý bản đồ Leaflet
   useEffect(() => {
-    if (!isOpen || !mapContainerRef.current) return;
+    if (!isOpen) return;
 
-    // Custom Map Marker Icon HTML
-    const customIcon = L.divIcon({
-      className: 'custom-map-pin',
-      html: `
-        <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-          <div style="position: absolute; width: 34px; height: 34px; background-color: rgba(19, 99, 107, 0.25); border-radius: 9999px; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-          <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #13636b 0%, #0d464c 100%); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; border: 2.5px solid #ffffff; box-shadow: 0 4px 10px rgba(0,0,0,0.35);">
-            <div style="width: 9px; height: 9px; background: #ffffff; border-radius: 50%;"></div>
+    let timer1 = null;
+    let timer2 = null;
+    let timer3 = null;
+
+    const initMap = () => {
+      if (!mapContainerRef.current) return;
+
+      // Custom Map Marker Icon HTML
+      const customIcon = L.divIcon({
+        className: 'custom-map-pin',
+        html: `
+          <div style="position: relative; display: flex; align-items: center; justify-content: center;">
+            <div style="position: absolute; width: 36px; height: 36px; background-color: rgba(19, 99, 107, 0.3); border-radius: 9999px; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+            <div style="width: 34px; height: 34px; background: linear-gradient(135deg, #13636b 0%, #0d464c 100%); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; border: 2.5px solid #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.35);">
+              <div style="width: 10px; height: 10px; background: #ffffff; border-radius: 50%;"></div>
+            </div>
           </div>
-        </div>
-      `,
-      iconSize: [34, 34],
-      iconAnchor: [17, 34],
-    });
-
-    // Nếu chưa khởi tạo bản đồ
-    if (!mapInstanceRef.current) {
-      const map = L.map(mapContainerRef.current, {
-        center: [currentCoords.lat, currentCoords.lon],
-        zoom: 15,
-        zoomControl: true,
+        `,
+        iconSize: [34, 34],
+        iconAnchor: [17, 34],
       });
 
-      // Lớp bản đồ OpenStreetMap chuẩn
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
-        maxZoom: 19,
-      }).addTo(map);
+      // Nếu chưa khởi tạo bản đồ
+      if (!mapInstanceRef.current) {
+        const map = L.map(mapContainerRef.current, {
+          center: [currentCoords.lat, currentCoords.lon],
+          zoom: 15,
+          zoomControl: true,
+          fadeAnimation: true,
+        });
 
-      // Thêm Marker
-      const marker = L.marker([currentCoords.lat, currentCoords.lon], {
-        icon: customIcon,
-        draggable: true,
-      }).addTo(map);
+        // Lớp bản đồ OpenStreetMap chuẩn
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          maxZoom: 19,
+          subdomains: ['a', 'b', 'c'],
+        }).addTo(map);
 
-      // Sự kiện click trên bản đồ để di chuyển Marker
-      map.on('click', (e) => {
-        const { lat, lng } = e.latlng;
-        marker.setLatLng([lat, lng]);
-        setCurrentCoords({ lat, lon: lng });
-        handleFetchAddress(lat, lng);
-      });
+        // Thêm Marker
+        const marker = L.marker([currentCoords.lat, currentCoords.lon], {
+          icon: customIcon,
+          draggable: true,
+        }).addTo(map);
 
-      // Sự kiện kéo thả Marker
-      marker.on('dragend', (e) => {
-        const { lat, lng } = e.target.getLatLng();
-        setCurrentCoords({ lat, lon: lng });
-        handleFetchAddress(lat, lng);
-      });
+        // Sự kiện click trên bản đồ để di chuyển Marker
+        map.on('click', (e) => {
+          const { lat, lng } = e.latlng;
+          marker.setLatLng([lat, lng]);
+          setCurrentCoords({ lat, lon: lng });
+          handleFetchAddress(lat, lng);
+        });
 
-      mapInstanceRef.current = map;
-      markerRef.current = marker;
+        // Sự kiện kéo thả Marker
+        marker.on('dragend', (e) => {
+          const { lat, lng } = e.target.getLatLng();
+          setCurrentCoords({ lat, lon: lng });
+          handleFetchAddress(lat, lng);
+        });
 
-      // Lấy địa chỉ ban đầu
-      handleFetchAddress(currentCoords.lat, currentCoords.lon);
-    } else {
-      mapInstanceRef.current.invalidateSize();
-    }
+        mapInstanceRef.current = map;
+        markerRef.current = marker;
+
+        // Lấy địa chỉ ban đầu
+        handleFetchAddress(currentCoords.lat, currentCoords.lon);
+      }
+
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    };
+
+    // Timeout giúp DOM render đầy đủ width/height trước khi Leaflet vẽ canvas/tiles
+    timer1 = setTimeout(initMap, 50);
+    timer2 = setTimeout(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    }, 250);
+    timer3 = setTimeout(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    }, 600);
 
     return () => {
-      // Dọn dẹp bản đồ khi unmount modal
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -306,11 +333,15 @@ export const MapAddressPicker = ({ isOpen, onClose, onSelectAddress, initialCoor
         </div>
 
         {/* Khung Bản đồ Leaflet */}
-        <div className="relative flex-1 min-h-[320px] sm:min-h-[380px] w-full bg-gray-100">
-          <div ref={mapContainerRef} className="w-full h-full z-10" />
+        <div className="relative w-full h-[380px] sm:h-[440px] bg-gray-100 overflow-hidden" style={{ minHeight: '360px', height: '420px' }}>
+          <div
+            ref={mapContainerRef}
+            className="w-full h-full z-10"
+            style={{ width: '100%', height: '100%', minHeight: '360px' }}
+          />
 
           {/* Badge gợi ý thao tác */}
-          <div className="absolute top-3 left-3 z-[1000] bg-white/90 backdrop-blur-xs px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm text-[11px] text-gray-700 font-medium pointer-events-none flex items-center gap-1.5">
+          <div className="absolute top-3 left-3 z-[1000] bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-lg border border-gray-200 shadow-md text-[11px] text-gray-700 font-bold pointer-events-none flex items-center gap-1.5">
             <Navigation className="w-3.5 h-3.5 text-teal-700" />
             <span>Kéo hoặc click chuột để ghim vị trí nhận hàng</span>
           </div>

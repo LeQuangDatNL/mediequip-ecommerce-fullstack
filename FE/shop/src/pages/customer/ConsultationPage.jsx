@@ -13,9 +13,15 @@ import {
   ShieldCheck,
   PhoneCall,
   Headphones,
-  FileCheck
+  FileCheck,
+  Download,
+  HelpCircle,
+  Sparkles,
+  Building2,
+  FileQuestion
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { downloadQuoteExcelTemplate } from '../../utils/quoteTemplateExport';
 
 export const ConsultationPage = () => {
   const { user, isAuthenticated } = useAuth();
@@ -126,6 +132,68 @@ export const ConsultationPage = () => {
         </p>
       </div>
 
+      {/* Hướng dẫn mục đích tính năng & Tải mẫu Excel */}
+      <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+          <div>
+            <span className="text-teal-700 font-bold text-xs uppercase tracking-wider block mb-1 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              Khi nào bạn nên sử dụng tính năng này?
+            </span>
+            <h2 className="text-lg sm:text-xl font-black text-gray-900">
+              Giải Pháp Báo Giá Y Tế Nhanh & Chuyên Nghiệp
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            onClick={downloadQuoteExcelTemplate}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all cursor-pointer shrink-0"
+          >
+            <Download className="w-4 h-4" />
+            <span>TẢI MẪU EXCEL BÁO GIÁ (.XLSX/.CSV)</span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-100 space-y-2">
+            <div className="w-8 h-8 rounded-xl bg-teal-700 text-white flex items-center justify-center font-bold text-xs">
+              01
+            </div>
+            <h3 className="font-bold text-gray-900 text-xs sm:text-sm">
+              Sản phẩm chưa có trên Web
+            </h3>
+            <p className="text-[11px] text-gray-600 leading-relaxed">
+              Bạn cần tìm các dòng máy chuyên dụng, vật tư tiêu hao đặc thù, model mới hoặc thiết bị đặt hàng nhập khẩu riêng theo yêu cầu của bệnh viện/phòng khám.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-100 space-y-2">
+            <div className="w-8 h-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold text-xs">
+              02
+            </div>
+            <h3 className="font-bold text-gray-900 text-xs sm:text-sm">
+              Báo Giá Sỉ & Dự Án Phòng Khám
+            </h3>
+            <p className="text-[11px] text-gray-600 leading-relaxed">
+              Cung cấp gói thầu setup trọn gói phòng khám đa khoa, nha khoa, xét nghiệm hoặc mua số lượng lớn với mức chiết khấu thương mại cao nhất.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-100 space-y-2">
+            <div className="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold text-xs">
+              03
+            </div>
+            <h3 className="font-bold text-gray-900 text-xs sm:text-sm">
+              Báo Giá Trực Tiếp & Hợp Đồng
+            </h3>
+            <p className="text-[11px] text-gray-600 leading-relaxed">
+              Nhận file báo giá chính thức có mộc đỏ công ty, xuất hóa đơn VAT điện tử, đầy đủ hồ sơ pháp lý kiểm định CO/CQ và bảo hành chính hãng tận nơi.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {submitted ? (
         <div className="bg-white rounded-3xl border border-gray-100 p-8 text-center space-y-5 shadow-sm">
           <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
@@ -180,7 +248,7 @@ export const ConsultationPage = () => {
               <input
                 type="tel"
                 required
-                placeholder="Ví dụ: 0901 000 001"
+                placeholder="Ví dụ: 0914 066 662"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-teal-600"
@@ -271,6 +339,18 @@ export const ConsultationPage = () => {
                 </label>
               )}
             </div>
+
+            <div className="flex items-center justify-between text-[11px] text-gray-500 pt-1.5 px-1">
+              <span>Chưa có danh sách sẵn?</span>
+              <button
+                type="button"
+                onClick={downloadQuoteExcelTemplate}
+                className="font-bold text-teal-700 hover:text-teal-900 hover:underline inline-flex items-center gap-1 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Tải Mẫu Báo Giá Excel Chuẩn (.CSV/.XLSX)</span>
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
@@ -331,7 +411,7 @@ export const ConsultationPage = () => {
           <Headphones className="w-5 h-5 text-teal-700 shrink-0 mt-0.5" />
           <div>
             <strong className="text-gray-900 block font-bold">Hotline 24/7</strong>
-            <span className="text-gray-500 text-[11px]">Hỗ trợ khẩn cấp: 1900 1234 | 0901 000 001.</span>
+            <span className="text-gray-500 text-[11px]">Hỗ trợ khẩn cấp & Zalo: 0914 066 662.</span>
           </div>
         </div>
       </div>

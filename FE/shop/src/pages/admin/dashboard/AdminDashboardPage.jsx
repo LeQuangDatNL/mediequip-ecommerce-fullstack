@@ -24,6 +24,8 @@ import {
   Plus,
   UploadCloud,
   FileText,
+  FileSpreadsheet,
+  LayoutTemplate,
   Activity,
   ArrowRight,
   RefreshCw,
@@ -397,39 +399,72 @@ export const AdminDashboardPage = () => {
           </div>
 
           {/* Quick Links */}
-          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-3xl border border-indigo-100/80 p-6 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-900">
-              Lối Tắt Quản Lý Nhanh
-            </h3>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <Link
-                to="/admin/products"
-                className="p-3 bg-white hover:bg-indigo-600 hover:text-white rounded-xl font-semibold text-gray-700 transition shadow-2xs flex items-center gap-2 group"
-              >
-                <Package className="w-4 h-4 text-indigo-600 group-hover:text-white" />
-                <span>Sản Phẩm</span>
-              </Link>
-              <Link
-                to="/admin/categories"
-                className="p-3 bg-white hover:bg-indigo-600 hover:text-white rounded-xl font-semibold text-gray-700 transition shadow-2xs flex items-center gap-2 group"
-              >
-                <Layers className="w-4 h-4 text-purple-600 group-hover:text-white" />
-                <span>Danh Mục</span>
-              </Link>
-              <Link
-                to="/admin/images"
-                className="p-3 bg-white hover:bg-indigo-600 hover:text-white rounded-xl font-semibold text-gray-700 transition shadow-2xs flex items-center gap-2 group"
-              >
-                <ImageIcon className="w-4 h-4 text-emerald-600 group-hover:text-white" />
-                <span>Thư Viện Ảnh</span>
-              </Link>
-              <Link
-                to="/admin/users"
-                className="p-3 bg-white hover:bg-indigo-600 hover:text-white rounded-xl font-semibold text-gray-700 transition shadow-2xs flex items-center gap-2 group"
-              >
-                <Users className="w-4 h-4 text-blue-600 group-hover:text-white" />
-                <span>Người Dùng</span>
-              </Link>
+          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-3xl border border-indigo-100/80 p-5 space-y-4">
+            <div>
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-indigo-900 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                Quản Lý Chính
+              </h3>
+              <div className="grid grid-cols-2 gap-2 text-xs mt-2">
+                <Link
+                  to="/admin/consultations"
+                  className="p-2.5 bg-white hover:bg-indigo-600 hover:text-white rounded-xl font-semibold text-gray-700 transition shadow-2xs flex items-center gap-2 group"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600 group-hover:text-white shrink-0" />
+                  <span className="truncate">Yêu Cầu Báo Giá</span>
+                </Link>
+                <Link
+                  to="/admin/orders"
+                  className="p-2.5 bg-white hover:bg-indigo-600 hover:text-white rounded-xl font-semibold text-gray-700 transition shadow-2xs flex items-center gap-2 group"
+                >
+                  <ShoppingBag className="w-4 h-4 text-amber-600 group-hover:text-white shrink-0" />
+                  <span className="truncate">Đơn Hàng</span>
+                </Link>
+                <Link
+                  to="/admin/products"
+                  className="p-2.5 bg-white hover:bg-indigo-600 hover:text-white rounded-xl font-semibold text-gray-700 transition shadow-2xs flex items-center gap-2 group"
+                >
+                  <Package className="w-4 h-4 text-indigo-600 group-hover:text-white shrink-0" />
+                  <span className="truncate">Sản Phẩm</span>
+                </Link>
+                <Link
+                  to="/admin/categories"
+                  className="p-2.5 bg-white hover:bg-indigo-600 hover:text-white rounded-xl font-semibold text-gray-700 transition shadow-2xs flex items-center gap-2 group"
+                >
+                  <Layers className="w-4 h-4 text-purple-600 group-hover:text-white shrink-0" />
+                  <span className="truncate">Danh Mục</span>
+                </Link>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-indigo-100">
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                Quản Lý Phụ
+              </h3>
+              <div className="grid grid-cols-2 gap-2 text-xs mt-2">
+                <Link
+                  to="/admin/banners"
+                  className="p-2.5 bg-white hover:bg-indigo-600 hover:text-white rounded-xl font-semibold text-gray-700 transition shadow-2xs flex items-center gap-2 group"
+                >
+                  <LayoutTemplate className="w-4 h-4 text-blue-600 group-hover:text-white shrink-0" />
+                  <span className="truncate">Banners</span>
+                </Link>
+                <Link
+                  to="/admin/images"
+                  className="p-2.5 bg-white hover:bg-indigo-600 hover:text-white rounded-xl font-semibold text-gray-700 transition shadow-2xs flex items-center gap-2 group"
+                >
+                  <ImageIcon className="w-4 h-4 text-teal-600 group-hover:text-white shrink-0" />
+                  <span className="truncate">Thư Viện Ảnh</span>
+                </Link>
+                <Link
+                  to="/admin/users"
+                  className="p-2.5 bg-white hover:bg-indigo-600 hover:text-white rounded-xl font-semibold text-gray-700 transition shadow-2xs flex items-center gap-2 group col-span-2"
+                >
+                  <Users className="w-4 h-4 text-sky-600 group-hover:text-white shrink-0" />
+                  <span className="truncate">Quản Lý Người Dùng</span>
+                </Link>
+              </div>
             </div>
           </div>
         </div>

@@ -95,49 +95,55 @@ export const Header = () => {
             </button>
           </form>
 
-          {/* Khu vực tương tác cá nhân (User, Wishlist, Cart) */}
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            {/* Yêu thích */}
+          {/* Khu vực tương tác cá nhân (User, Wishlist, Cart) - Thiết kế nổi bật & chuyên nghiệp */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* 1. Nút Danh Sách Yêu Thích (Nổi bật với viền hồng đỏ và số lượng) */}
             <Link
               to="/wishlist"
-              className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition hidden sm:flex relative"
-              title="Danh sách yêu thích"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border border-rose-200 bg-rose-50/70 hover:bg-rose-100/90 text-rose-700 font-bold text-xs transition duration-200 shadow-2xs hover:shadow-xs group cursor-pointer"
+              title="Xem danh sách sản phẩm yêu thích"
             >
-              <Heart className={`w-5 h-5 ${totalWishlistCount > 0 ? 'text-red-500 fill-red-500' : ''}`} />
-              {totalWishlistCount > 0 && (
-                <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
-                  {totalWishlistCount}
-                </span>
-              )}
+              <Heart className={`w-4 h-4 text-rose-600 transition group-hover:scale-110 ${totalWishlistCount > 0 ? 'fill-rose-500 text-rose-500' : ''}`} />
+              <span className="hidden md:inline">Yêu thích</span>
+              <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center ${
+                totalWishlistCount > 0 ? 'bg-rose-600 text-white' : 'bg-rose-200/80 text-rose-800'
+              }`}>
+                {totalWishlistCount}
+              </span>
             </Link>
 
-            {/* Trạng thái tài khoản */}
+            {/* 2. Trạng thái tài khoản & Quản lý người dùng */}
             {isAuthenticated ? (
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 p-1.5 rounded-full hover:bg-gray-100 transition cursor-pointer"
+                  className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full border border-teal-200 bg-teal-50/80 hover:bg-teal-100 text-teal-900 font-bold text-xs transition duration-200 shadow-2xs hover:shadow-xs cursor-pointer"
+                  title="Quản lý tài khoản"
                 >
-                  <div className="w-8 h-8 rounded-full bg-teal-700 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-teal-700 to-emerald-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
                     {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
                   </div>
-                  <div className="text-left hidden xl:block max-w-[110px] truncate">
-                    <p className="text-xs font-bold text-gray-900 truncate">
+                  <div className="text-left hidden lg:block max-w-[120px] truncate">
+                    <span className="text-[9px] uppercase tracking-wider text-teal-700 font-extrabold block leading-none">
+                      {isAdmin ? 'Quản trị viên' : 'Tài khoản'}
+                    </span>
+                    <span className="text-xs font-bold text-gray-900 truncate block mt-0.5">
                       {user?.fullName || user?.username}
-                    </p>
+                    </span>
                   </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-gray-500" />
+                  <ChevronDown className="w-3.5 h-3.5 text-teal-700" />
                 </button>
 
                 {/* Dropdown Menu */}
                 {userDropdownOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setUserDropdownOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
-                      <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-[11px] text-gray-500">Đang đăng nhập</p>
-                        <p className="text-xs font-bold text-gray-900 truncate mt-0.5">{user?.email}</p>
+                    <div className="absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                      <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/70">
+                        <p className="text-[10px] uppercase font-bold text-gray-400">Đang đăng nhập</p>
+                        <p className="text-xs font-bold text-gray-900 truncate mt-0.5">{user?.fullName || user?.username}</p>
+                        <p className="text-[11px] text-gray-500 truncate">{user?.email}</p>
                       </div>
 
                       {isAdmin && (
@@ -163,19 +169,19 @@ export const Header = () => {
                       <Link
                         to="/profile"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 transition"
+                        className="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 font-medium transition"
                       >
-                        <User className="w-4 h-4 text-gray-500" />
-                        Tài khoản của tôi
+                        <User className="w-4 h-4 text-teal-600" />
+                        Quản lý tài khoản của tôi
                       </Link>
 
                       <Link
                         to="/orders"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 transition"
+                        className="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 font-medium transition"
                       >
-                        <PackageCheck className="w-4 h-4 text-gray-500" />
-                        Đơn mua của tôi
+                        <PackageCheck className="w-4 h-4 text-teal-600" />
+                        Đơn hàng của tôi
                       </Link>
 
                       <button
@@ -184,7 +190,7 @@ export const Header = () => {
                           setUserDropdownOpen(false);
                           handleLogout();
                         }}
-                        className="w-full flex items-center gap-2 px-4 py-2 text-xs text-red-600 hover:bg-red-50 transition text-left cursor-pointer border-t border-gray-50 mt-1"
+                        className="w-full flex items-center gap-2 px-4 py-2 text-xs text-red-600 hover:bg-red-50 transition text-left cursor-pointer border-t border-gray-100 mt-1 font-semibold"
                       >
                         <LogOut className="w-4 h-4 text-red-500" />
                         Đăng xuất
@@ -194,25 +200,26 @@ export const Header = () => {
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-1 sm:gap-2">
-                <Link
-                  to="/login"
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-teal-700 hover:bg-teal-50 rounded-lg transition"
-                >
-                  <User className="w-3.5 h-3.5" />
-                  <span>Đăng nhập</span>
-                </Link>
-              </div>
+              <Link
+                to="/login"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-teal-600 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs transition duration-200 shadow-xs hover:shadow-md cursor-pointer group"
+                title="Đăng nhập tài khoản"
+              >
+                <User className="w-4 h-4 text-white group-hover:scale-110 transition" />
+                <span className="hidden sm:inline">Tài Khoản / Đăng Nhập</span>
+                <span className="sm:hidden">Đăng nhập</span>
+              </Link>
             )}
 
-            {/* Giỏ hàng (Cart) với Badge đỏ */}
+            {/* 3. Giỏ hàng (Cart) */}
             <Link
               to="/cart"
-              className="p-2 text-gray-700 hover:text-teal-700 hover:bg-teal-50 rounded-full transition relative flex items-center"
-              title="Giỏ hàng"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100/90 text-emerald-900 font-bold text-xs transition shadow-2xs hover:shadow-xs relative group"
+              title="Xem giỏ hàng"
             >
-              <ShoppingCart className="w-5 h-5" />
-              <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold w-4.5 h-4.5 rounded-full flex items-center justify-center shadow-xs">
+              <ShoppingCart className="w-4 h-4 text-emerald-700 group-hover:scale-110 transition" />
+              <span className="hidden md:inline">Giỏ hàng</span>
+              <span className="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-xs">
                 {totalCount}
               </span>
             </Link>
@@ -349,11 +356,11 @@ export const Header = () => {
               </span>
 
               <a
-                href="tel:19001234"
+                href="tel:0914066662"
                 className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full text-amber-300 font-bold transition"
               >
                 <Phone className="w-3 h-3 text-amber-300" />
-                <span>1900 1234</span>
+                <span>0914 066 662</span>
               </a>
 
               {isAdmin && (

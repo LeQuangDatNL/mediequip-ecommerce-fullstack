@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../hooks/useAuth';
 import {
   Phone,
   Mail,
@@ -9,11 +10,15 @@ import {
   ExternalLink,
   ShieldCheck,
   Headphones,
-  CheckCircle2
+  CheckCircle2,
+  User,
+  Sparkles
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const ContactPage = () => {
+  const { user, isAuthenticated } = useAuth();
+
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
@@ -22,6 +27,18 @@ export const ContactPage = () => {
     message: '',
   });
   const [submitted, setSubmitted] = useState(false);
+
+  // Tự động điền thông tin nếu khách hàng đã đăng nhập
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: prev.fullName || user.fullName || user.username || '',
+        phone: prev.phone || user.phone || '',
+        email: prev.email || user.email || '',
+      }));
+    }
+  }, [isAuthenticated, user]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -73,10 +90,10 @@ export const ContactPage = () => {
                 onClick={() => {
                   setSubmitted(false);
                   setFormData({
-                    fullName: '',
-                    phone: '',
-                    email: '',
-                    topic: 'Tư vấn mua máy đo huyết áp / đường huyết',
+                    fullName: isAuthenticated ? (user?.fullName || user?.username || '') : '',
+                    phone: isAuthenticated ? (user?.phone || '') : '',
+                    email: isAuthenticated ? (user?.email || '') : '',
+                    topic: '1. Báo lỗi website / Sự cố kỹ thuật (Không đặt được hàng, lỗi tính năng...)',
                     message: '',
                   });
                 }}
@@ -87,6 +104,16 @@ export const ContactPage = () => {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
+              {isAuthenticated && (
+                <div className="p-3 bg-teal-50 border border-teal-200 rounded-xl text-xs text-teal-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-teal-700 shrink-0" />
+                    <span>Đang tự động điền từ tài khoản: <strong>{user?.fullName || user?.username}</strong></span>
+                  </div>
+                  <span className="font-mono text-teal-700 text-[11px] bg-white px-2 py-0.5 rounded border border-teal-200">{user?.email}</span>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">
@@ -109,7 +136,7 @@ export const ContactPage = () => {
                   <input
                     type="tel"
                     required
-                    placeholder="Ví dụ: 0901 000 003"
+                    placeholder="Ví dụ: 0914 066 662"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-indigo-500"
@@ -200,8 +227,8 @@ export const ContactPage = () => {
               <div className="flex items-start gap-3">
                 <Phone className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
                 <div>
-                  <strong className="text-gray-900 block font-bold">Hotline Tư Vấn:</strong>
-                  <span className="text-indigo-600 font-bold text-sm">1900 1234</span> | <span>0901 000 001</span>
+                  <strong className="text-gray-900 block font-bold">Hotline & Zalo:</strong>
+                  <a href="tel:0914066662" className="text-indigo-600 font-bold text-sm hover:underline">0914 066 662</a>
                 </div>
               </div>
 
@@ -209,7 +236,7 @@ export const ContactPage = () => {
                 <Mail className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
                 <div>
                   <strong className="text-gray-900 block font-bold">Hòm Thư Hỗ Trợ:</strong>
-                  <span>kimlienmedical@gmail.com</span>
+                  <a href="mailto:lienkehoach@gmail.com" className="text-indigo-600 font-semibold hover:underline">lienkehoach@gmail.com</a>
                 </div>
               </div>
 
@@ -231,27 +258,27 @@ export const ContactPage = () => {
 
             <div className="space-y-2">
               <a
-                href="https://zalo.me"
+                href="https://zalo.me/0914066662"
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center justify-between p-3 bg-white hover:bg-cyan-50 border border-cyan-200 rounded-2xl text-xs font-bold text-cyan-700 transition shadow-2xs group"
               >
                 <div className="flex items-center gap-2.5">
                   <span className="w-6 h-6 bg-cyan-500 text-white rounded-full flex items-center justify-center font-black text-xs">Z</span>
-                  <span>Nhắn tin Zalo: 0901 000 001</span>
+                  <span>Nhắn tin Zalo: 0914 066 662</span>
                 </div>
                 <ExternalLink className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
               </a>
 
               <a
-                href="https://facebook.com"
+                href="https://www.facebook.com/kim.lien.ngo.304193"
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center justify-between p-3 bg-white hover:bg-blue-50 border border-blue-200 rounded-2xl text-xs font-bold text-blue-700 transition shadow-2xs group"
               >
                 <div className="flex items-center gap-2.5">
                   <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center font-black text-xs">f</span>
-                  <span>Facebook Fanpage Kim Liên</span>
+                  <span>Facebook Kim Liên</span>
                 </div>
                 <ExternalLink className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
               </a>

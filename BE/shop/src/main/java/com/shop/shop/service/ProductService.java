@@ -42,17 +42,23 @@ public class ProductService {
 
     // Phân trang và tìm kiếm sản phẩm theo keyword và categoryId (chỉ lấy is_deleted = false)
     @Transactional(readOnly = true)
-    public Page<ProductResponse> findAll(int page, String keyword, Long categoryId) {
+    public Page<ProductResponse> findAll(int page, int size, String keyword, Long categoryId) {
         if (page < 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page must not be negative");
-        PageRequest request = PageRequest.of(page, 10, Sort.by(Sort.Direction.DESC, "id"));
+        int pageSize = size > 0 ? size : 12;
+        PageRequest request = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "id"));
         String search = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();
         return productRepository.searchProducts(categoryId, search, request)
                 .map(this::mapToResponse);
     }
 
     @Transactional(readOnly = true)
+    public Page<ProductResponse> findAll(int page, String keyword, Long categoryId) {
+        return findAll(page, 12, keyword, categoryId);
+    }
+
+    @Transactional(readOnly = true)
     public Page<ProductResponse> findAll(int page, String keyword) {
-        return findAll(page, keyword, null);
+        return findAll(page, 12, keyword, null);
     }
 
     @Transactional(readOnly = true)

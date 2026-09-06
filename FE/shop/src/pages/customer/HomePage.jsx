@@ -6,26 +6,22 @@ import { useWishlist } from '../../contexts/WishlistContext';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
 import consultationService from '../../services/consultationService';
-import bannerService from '../../services/bannerService';
-import HeroBannerImg from '../../assets/HeroBanner.jpg';
+import HeroDoctorImg from '../../assets/medical_hero_doctor.jpg';
+import MedicalDevicesImg from '../../assets/medical_devices_banner.jpg';
+import MedicalConsultImg from '../../assets/medical_consult_banner.jpg';
+import downloadQuoteExcelTemplate from '../../utils/quoteTemplateExport';
+import { handleImageError, DEFAULT_NO_IMAGE } from '../../utils/imageHelper';
 import {
   ShieldCheck,
   Truck,
-  HeartHandshake,
   ArrowRight,
-  Sparkles,
   ShoppingBag,
-  Shield,
-  Layers,
   PhoneCall,
   CheckCircle2,
   Heart,
-  Star,
-  Zap,
   Award,
   Activity,
   Stethoscope,
-  ChevronLeft,
   ChevronRight,
   ChevronDown,
   HelpCircle,
@@ -35,7 +31,19 @@ import {
   X,
   Send,
   Clock,
-  RotateCcw
+  RotateCcw,
+  Search,
+  Syringe,
+  Microscope,
+  HeartPulse,
+  Wind,
+  Accessibility,
+  Pill,
+  Headphones,
+  Check,
+  DownloadCloud,
+  Sparkles,
+  Building2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -47,11 +55,12 @@ export const HomePage = () => {
 
   const [categories, setCategories] = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
-  const [banners, setBanners] = useState([]);
-  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
   const [loading, setLoading] = useState(true);
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
+
+  // Search & Filter State on Hero Header
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
 
   // State cho Form Gửi File Báo Giá / Tư Vấn Trực Tuyến
   const [consultForm, setConsultForm] = useState({
@@ -85,25 +94,13 @@ export const HomePage = () => {
     }
   }, [cooldown]);
 
-  // Tự động chuyển Banner Slide mỗi 5 giây
-  useEffect(() => {
-    if (banners.length <= 1 || isPaused) return;
-
-    const timer = setInterval(() => {
-      setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, [banners.length, isPaused]);
-
   useEffect(() => {
     const fetchHomeData = async () => {
       setLoading(true);
       try {
-        const [cats, prods, activeBanners] = await Promise.all([
+        const [cats, prods] = await Promise.all([
           categoryService.getAllCategories().catch(() => []),
           productService.getProducts(0, '').catch(() => ({ content: [] })),
-          bannerService.getActiveBanners().catch(() => []),
         ]);
 
         const catList = Array.isArray(cats) ? cats : [];
@@ -111,9 +108,6 @@ export const HomePage = () => {
 
         const prodList = prods.content || (Array.isArray(prods) ? prods : []);
         setBestSellers(prodList.slice(0, 8));
-
-        const bannerList = Array.isArray(activeBanners) ? activeBanners : [];
-        setBanners(bannerList);
       } catch (err) {
         console.error('Lỗi tải dữ liệu trang chủ:', err);
       } finally {
@@ -125,7 +119,7 @@ export const HomePage = () => {
   }, []);
 
   const formatPrice = (price) => {
-    if (price === null || price === undefined) return 'Liên hệ báo giá';
+    if (price === null || price === undefined || price === 0) return 'Liên hệ báo giá';
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
   };
 
@@ -149,6 +143,14 @@ export const HomePage = () => {
       content: '',
     });
     setSelectedFile(null);
+  };
+
+  const handleHeroSearchSubmit = (e) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (searchQuery.trim()) params.set('search', searchQuery.trim());
+    if (selectedCategoryFilter) params.set('categoryId', selectedCategoryFilter);
+    navigate(`/products?${params.toString()}`);
   };
 
   const handleSubmitConsultation = async (e) => {
@@ -178,9 +180,9 @@ export const HomePage = () => {
       }
 
       await consultationService.submitConsultation(formData);
-      toast.success('Gửi yêu cầu báo giá / tư vấn thành công! Hệ thống đã ghi nhận và gửi email xác nhận.');
+      toast.success('Gửi yêu cầu báo giá / tư vấn thành công! Đội ngũ kỹ sư hóa học sẽ liên hệ trong 30 phút.');
       handleResetForm();
-      setCooldown(30); // Đặt thời gian chống spam 30 giây
+      setCooldown(30);
     } catch (err) {
       console.error('Lỗi gửi tư vấn:', err);
       toast.error('Không thể gửi yêu cầu: ' + (err.response?.data?.message || err.message));
@@ -189,199 +191,567 @@ export const HomePage = () => {
     }
   };
 
-  // Icon biểu tượng danh mục theo phong cách MediEquip
-  const categoryIcons = [
-    '🩺', '💨', '🩸', '🦽', '💆', '😷', '🦷', '🍼', '🌿', '🩹'
-  ];
+  // Helper gán Medical Icon chuyên khoa cho từng Category
+  const getCategoryIconDetails = (catName = '', index = 0) => {
+    const name = catName.toLowerCase();
+    if (name.includes('chẩn đoán') || name.includes('siêu âm') || name.includes('x-quang') || name.includes('máy đo') || name.includes('huyết áp')) {
+      return { icon: Stethoscope, color: 'text-blue-600', bg: 'bg-blue-50/80', border: 'border-blue-100 group-hover:border-blue-300', tag: 'Chẩn đoán' };
+    }
+    if (name.includes('phòng mổ') || name.includes('gây mê') || name.includes('phẫu thuật') || name.includes('dao')) {
+      return { icon: Syringe, color: 'text-teal-600', bg: 'bg-teal-50/80', border: 'border-teal-100 group-hover:border-teal-300', tag: 'Phòng mổ' };
+    }
+    if (name.includes('hồi sức') || name.includes('cấp cứu') || name.includes('oxy') || name.includes('thở')) {
+      return { icon: Wind, color: 'text-cyan-600', bg: 'bg-cyan-50/80', border: 'border-cyan-100 group-hover:border-cyan-300', tag: 'Hồi sức' };
+    }
+    if (name.includes('xét nghiệm') || name.includes('sinh hóa') || name.includes('huyết học') || name.includes('lab')) {
+      return { icon: Microscope, color: 'text-indigo-600', bg: 'bg-indigo-50/80', border: 'border-indigo-100 group-hover:border-indigo-300', tag: 'Xét nghiệm' };
+    }
+    if (name.includes('phục hồi') || name.includes('chức năng') || name.includes('vật lý') || name.includes('xe lăn')) {
+      return { icon: Accessibility, color: 'text-emerald-600', bg: 'bg-emerald-50/80', border: 'border-emerald-100 group-hover:border-emerald-300', tag: 'Phục hồi' };
+    }
+    if (name.includes('tiêu hao') || name.includes('vật tư') || name.includes('khẩu trang') || name.includes('găng tay')) {
+      return { icon: Pill, color: 'text-amber-600', bg: 'bg-amber-50/80', border: 'border-amber-100 group-hover:border-amber-300', tag: 'Vật tư' };
+    }
+    if (name.includes('tim mạch') || name.includes('điện tim') || name.includes('ecg')) {
+      return { icon: HeartPulse, color: 'text-rose-600', bg: 'bg-rose-50/80', border: 'border-rose-100 group-hover:border-rose-300', tag: 'Tim mạch' };
+    }
+
+    const fallbacks = [
+      { icon: Stethoscope, color: 'text-blue-600', bg: 'bg-blue-50/80', border: 'border-blue-100 group-hover:border-blue-300', tag: 'Thiết bị' },
+      { icon: Activity, color: 'text-teal-600', bg: 'bg-teal-50/80', border: 'border-teal-100 group-hover:border-teal-300', tag: 'Y khoa' },
+      { icon: Microscope, color: 'text-indigo-600', bg: 'bg-indigo-50/80', border: 'border-indigo-100 group-hover:border-indigo-300', tag: 'Xét nghiệm' },
+      { icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50/80', border: 'border-emerald-100 group-hover:border-emerald-300', tag: 'Tiêu chuẩn' },
+      { icon: Pill, color: 'text-purple-600', bg: 'bg-purple-50/80', border: 'border-purple-100 group-hover:border-purple-300', tag: 'Vật tư' },
+    ];
+    return fallbacks[index % fallbacks.length];
+  };
 
   return (
-    <div className="space-y-16">
-      {/* 1. HERO BANNER CAROUSEL - Dynamic Banners & MediEquip Fallback */}
-      {(() => {
-        const hasBanners = banners && banners.length > 0;
-        const currentBanner = hasBanners ? banners[currentBannerIndex] : null;
+    <div className="space-y-16 sm:space-y-20">
+      
+      {/* ========================================================================= */}
+      {/* 1. HERO HEADER (Đầu trang, trước Danh mục - Chuẩn Medical Healthcare) */}
+      {/* ========================================================================= */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-[#eef7fc] via-[#f7fbfe] to-white border border-blue-100/70 p-6 sm:p-10 lg:p-14 shadow-xs">
+        
+        {/* Decorative background blurs */}
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-blue-200/30 blur-3xl pointer-events-none"></div>
+        <div className="absolute top-1/2 -left-24 w-80 h-80 rounded-full bg-teal-200/25 blur-3xl pointer-events-none"></div>
 
-        const bannerTitle = currentBanner?.title || 'CHĂM SÓC SỨC KHỎE TẠI NHÀ\nĐƠN GIẢN VÀ HIỆU QUẢ';
-        const bannerSubtitle = currentBanner?.subtitle || 'Cung cấp máy đo huyết áp, máy tạo oxy, máy đo đường huyết và vật tư y tế đạt tiêu chuẩn kiểm định Bộ Y Tế.';
-        const bannerBadge = currentBanner?.badgeText || 'THIẾT BỊ Y TẾ GIA ĐÌNH CHÍNH HÃNG';
-        const bannerImage = currentBanner?.imageUrl || HeroBannerImg;
-        const primaryBtnText = currentBanner?.buttonText || 'MUA NGAY';
-        const primaryBtnLink = currentBanner?.buttonLink || '/products';
-        const secondaryBtnText = currentBanner?.secondaryButtonText || 'GỬI FILE BÁO GIÁ';
-        const secondaryBtnLink = currentBanner?.secondaryButtonLink || '/consultation';
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
+          
+          {/* Cột trái: Thông điệp giới thiệu & CTA (7 cols) */}
+          <div className="lg:col-span-7 space-y-6">
+            
+            {/* Trust badge */}
+            <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/90 border border-blue-200/80 shadow-2xs text-xs font-semibold text-blue-900">
+              <div className="flex -space-x-1.5 overflow-hidden">
+                <span className="inline-block w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center border border-white">🏥</span>
+                <span className="inline-block w-5 h-5 rounded-full bg-teal-500 text-white text-[10px] font-bold flex items-center justify-center border border-white">🩺</span>
+                <span className="inline-block w-5 h-5 rounded-full bg-indigo-500 text-white text-[10px] font-bold flex items-center justify-center border border-white">⭐</span>
+              </div>
+              <span>Tin cậy bởi <strong>500+</strong> Bệnh viện, Phòng khám & Bác sĩ</span>
+            </div>
 
-        const handlePrevBanner = () => {
-          if (!hasBanners) return;
-          setCurrentBannerIndex((prev) => (prev === 0 ? banners.length - 1 : prev - 1));
-        };
+            {/* Main Headline */}
+            <div className="space-y-3">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 tracking-tight leading-[1.15]">
+                Giải Pháp Thiết Bị & Vật Tư Y Tế <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-teal-600 to-indigo-700">Chuyên Nghiệp</span>
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed max-w-xl font-normal">
+                Cung cấp trang thiết bị chẩn đoán hình ảnh, phòng mổ, theo dõi bệnh nhân và vật tư tiêu hao đạt chuẩn Bộ Y Tế & Quốc tế (FDA/CE). Tư vấn kỹ thuật chuyên sâu và báo giá dự án nhanh chóng.
+              </p>
+            </div>
 
-        const handleNextBanner = () => {
-          if (!hasBanners) return;
-          setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
-        };
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-3.5 pt-1">
+              <Link
+                to="/products"
+                className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs sm:text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 group hover:-translate-y-0.5"
+              >
+                <span>Xem Danh Mục Sản Phẩm</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
 
-        return (
-          <section
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
-            className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#e8f6f8] via-[#e2f1f4] to-[#d6ebef] border border-teal-100 shadow-sm min-h-[380px] sm:min-h-[440px] flex items-center transition-all duration-500"
+              <a
+                href="#quote-section"
+                className="px-6 py-3.5 bg-white hover:bg-teal-50 text-teal-800 font-bold rounded-2xl text-xs sm:text-sm border border-teal-200 shadow-2xs hover:shadow-md transition-all duration-200 flex items-center gap-2 hover:-translate-y-0.5"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-teal-600" />
+                <span>Yêu Cầu Báo Giá Nhanh</span>
+              </a>
+
+              <a
+                href="#how-it-works"
+                className="px-4 py-3.5 text-gray-600 hover:text-blue-700 font-semibold text-xs sm:text-sm transition flex items-center gap-1.5"
+              >
+                <Clock className="w-4 h-4 text-blue-500" />
+                <span>Quy trình 5 bước</span>
+              </a>
+            </div>
+
+            {/* 4 Trust Checkmarks */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-blue-100/80">
+              <div className="flex items-center gap-2 text-xs text-gray-700 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>100% CO/CQ Chính Hãng</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-700 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                <span>Giá Cả Tốt Nhất & Báo Giá 2H</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-700 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                <span>Giao Hàng Nhanh Toàn Quốc</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-gray-700 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                <span>Kỹ Sư Hóa Học Hỗ Trợ 24/7</span>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Cột phải: Hero Medical Visual với Floating Cards (5 cols) */}
+          <div className="lg:col-span-5 relative flex justify-center items-center">
+            
+            {/* Main Visual Image Container */}
+            <div className="relative w-full max-w-md aspect-4/3 sm:aspect-16/11 rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-white">
+              <img
+                src={HeroDoctorImg}
+                alt="Đội ngũ bác sĩ và thiết bị y tế chuyên nghiệp"
+                className="w-full h-full object-cover object-center transform hover:scale-102 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 via-transparent to-transparent"></div>
+            </div>
+
+            {/* Floating Card 1: Available Devices */}
+            <div className="absolute -top-4 sm:-top-5 right-2 sm:right-0 bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-2xl shadow-xl border border-blue-100 flex items-center gap-3 animate-fade-in">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <Stethoscope className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Thiết Bị Sẵn Kho</p>
+                <p className="text-xs sm:text-sm font-black text-gray-900">1,200+ Model Máy</p>
+              </div>
+            </div>
+
+            {/* Floating Card 2: 24/7 Support */}
+            <div className="absolute -bottom-4 sm:-bottom-5 left-2 sm:left-0 bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-2xl shadow-xl border border-teal-100 flex items-center gap-3 animate-fade-in">
+              <div className="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">Bảo Hành & Kiểm Định</p>
+                <p className="text-xs sm:text-sm font-black text-teal-900">Chuẩn ISO 13485 & CE</p>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* ------------------------------------------------------------- */}
+        {/* QUICK SEARCH & FILTER BAR (Nằm ở chân Hero Header) */}
+        {/* ------------------------------------------------------------- */}
+        <div className="mt-8 pt-6 border-t border-blue-100/60">
+          <form onSubmit={handleHeroSearchSubmit} className="bg-white rounded-2xl p-2.5 sm:p-3 shadow-md border border-blue-100 flex flex-col sm:flex-row items-center gap-2.5">
+            <div className="flex-1 flex items-center gap-2.5 px-3 py-1.5 w-full">
+              <Search className="w-4 h-4 text-blue-500 shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Tìm tên thiết bị y tế, model, hãng sản xuất (Omron, GE, Philips...)..."
+                className="w-full bg-transparent text-xs sm:text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
+              />
+            </div>
+
+            <div className="w-full sm:w-64 border-t sm:border-t-0 sm:border-l border-gray-200 px-3 py-1.5 flex items-center">
+              <select
+                value={selectedCategoryFilter}
+                onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                className="w-full bg-transparent text-xs sm:text-sm text-gray-700 font-medium focus:outline-none cursor-pointer"
+              >
+                <option value="">Tất cả chuyên khoa y tế</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shrink-0 shadow-xs cursor-pointer"
+            >
+              <Search className="w-4 h-4" />
+              <span>Tìm Kiếm Thiết Bị</span>
+            </button>
+          </form>
+        </div>
+
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 2. DANH MỤC SẢN PHẨM (Nằm ngay bên dưới Hero Header - Medical Line Icons) */}
+      {/* ========================================================================= */}
+      <section className="space-y-6">
+        
+        {/* Section Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 border-b border-gray-200/80 pb-4">
+          <div>
+            <span className="text-[11px] font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200/60">
+              CHUYÊN KHOA & PHÂN LOẠI
+            </span>
+            <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight mt-1.5">
+              Danh Mục Trang Thiết Bị Y Tế
+            </h2>
+          </div>
+          <Link
+            to="/categories"
+            className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 hover:underline shrink-0"
           >
-            <div className="max-w-7xl mx-auto px-6 sm:px-12 py-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center w-full">
-              {/* Cột trái: Tiêu đề & Nút kêu gọi hành động */}
-              <div className="space-y-5 z-10 animate-fade-in">
-                {bannerBadge && (
-                  <span className="inline-block text-xs sm:text-sm font-bold tracking-wider text-teal-800 uppercase bg-teal-50/90 px-3.5 py-1.5 rounded-full border border-teal-200/60 shadow-2xs">
-                    {bannerBadge}
+            <span>Xem tất cả danh mục</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {/* Categories Grid (Numbered Medical Cards) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {categories.map((cat, idx) => {
+            const iconInfo = getCategoryIconDetails(cat.name, idx);
+            const Icon = iconInfo.icon;
+            const numberString = String(idx + 1).padStart(2, '0');
+
+            return (
+              <Link
+                key={cat.id || idx}
+                to={`/products?categoryId=${cat.id}`}
+                className={`group relative p-5 bg-white rounded-2xl border ${iconInfo.border} shadow-2xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between overflow-hidden`}
+              >
+                {/* Top: Number and Medical Icon */}
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-black text-gray-300 group-hover:text-blue-600 transition-colors">
+                    {numberString}
                   </span>
-                )}
+                  <div className={`w-11 h-11 rounded-xl ${iconInfo.bg} ${iconInfo.color} flex items-center justify-center transition-transform duration-300 group-hover:scale-110 shadow-2xs`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                </div>
 
-                <h1 className="text-2xl sm:text-4xl lg:text-4xl font-black text-gray-900 tracking-tight leading-tight whitespace-pre-line">
-                  {bannerTitle}
-                </h1>
+                {/* Body: Name & Specialty Tag */}
+                <div className="mt-4 space-y-1">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    {iconInfo.tag}
+                  </span>
+                  <h3 className="font-bold text-gray-900 text-sm group-hover:text-blue-600 transition line-clamp-2">
+                    {cat.name}
+                  </h3>
+                </div>
 
-                {bannerSubtitle && (
-                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed max-w-lg">
-                    {bannerSubtitle}
-                  </p>
-                )}
+                {/* Footer: Action hint */}
+                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] font-semibold text-gray-500 group-hover:text-blue-600 transition">
+                  <span>Khám phá thiết bị</span>
+                  <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
 
-                <div className="flex flex-wrap items-center gap-3 pt-2">
-                  {primaryBtnText && (
-                    primaryBtnLink.startsWith('#') ? (
-                      <a
-                        href={primaryBtnLink}
-                        className="px-7 py-3 bg-[#ff5722] hover:bg-[#f4511e] text-white font-extrabold rounded-full text-xs sm:text-sm shadow-md transition transform hover:scale-105"
-                      >
-                        {primaryBtnText}
-                      </a>
-                    ) : (
-                      <Link
-                        to={primaryBtnLink}
-                        className="px-7 py-3 bg-[#ff5722] hover:bg-[#f4511e] text-white font-extrabold rounded-full text-xs sm:text-sm shadow-md transition transform hover:scale-105"
-                      >
-                        {primaryBtnText}
-                      </Link>
-                    )
-                  )}
+      {/* ========================================================================= */}
+      {/* 3. BA (3) BANNER / SECTION GIỚI THIỆU & GIẢI THÍCH DỊCH VỤ */}
+      {/* ========================================================================= */}
+      
+      {/* --- BANNER 1: THIẾT BỊ Y TẾ CHẤT LƯỢNG & NGUỒN GỐC XUẤT XỨ --- */}
+      <section className="bg-white rounded-3xl border border-gray-200/90 p-6 sm:p-10 lg:p-12 shadow-xs overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          
+          {/* Cột trái: Hình ảnh thiết bị y tế hiện đại (5 cols) */}
+          <div className="lg:col-span-5 relative">
+            <div className="aspect-4/3 sm:aspect-16/11 rounded-2xl overflow-hidden shadow-xl border border-gray-100 bg-gray-50">
+              <img
+                src={MedicalDevicesImg}
+                alt="Thiết bị chẩn đoán hình ảnh và hồi sức hiện đại"
+                className="w-full h-full object-cover transform hover:scale-103 transition-transform duration-500"
+              />
+            </div>
+            
+            {/* Floating Badge tiêu chuẩn */}
+            <div className="absolute -bottom-4 right-4 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-xl shadow-lg border border-emerald-100 flex items-center gap-2">
+              <Award className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div>
+                <p className="text-[10px] text-gray-500 font-bold uppercase">Tiêu Chuẩn Toàn Cầu</p>
+                <p className="text-xs font-black text-gray-900">FDA • CE • ISO 13485</p>
+              </div>
+            </div>
+          </div>
 
-                  {secondaryBtnText && (
-                    secondaryBtnLink.startsWith('#') ? (
-                      <a
-                        href={secondaryBtnLink}
-                        className="px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-full text-xs sm:text-sm shadow-md transition flex items-center gap-1.5 transform hover:scale-105"
-                      >
-                        <FileSpreadsheet className="w-4 h-4" />
-                        <span>{secondaryBtnText}</span>
-                      </a>
-                    ) : (
-                      <Link
-                        to={secondaryBtnLink}
-                        className="px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-full text-xs sm:text-sm shadow-md transition flex items-center gap-1.5 transform hover:scale-105"
-                      >
-                        <FileSpreadsheet className="w-4 h-4" />
-                        <span>{secondaryBtnText}</span>
-                      </Link>
-                    )
-                  )}
+          {/* Cột phải: Nội dung cam kết chất lượng (7 cols) */}
+          <div className="lg:col-span-7 space-y-5">
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold text-teal-700 uppercase tracking-wider bg-teal-50 px-2.5 py-0.5 rounded-md border border-teal-200/60">
+                CAM KẾT CHẤT LƯỢNG & NGUỒN GỐC
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-snug">
+                Trang Thiết Bị Y Tế Nhập Khẩu Đạt Chuẩn Kiểm Định Quốc Tế
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                Toàn bộ thiết bị y tế tại MediEquip được nhập khẩu chính ngạch từ các thương hiệu uy tín hàng đầu (Mỹ, Đức, Nhật Bản, Hàn Quốc), đáp ứng đầy đủ tiêu chuẩn kiểm định của Bộ Y Tế.
+              </p>
+            </div>
+
+            {/* 4 Bullet Points */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <Check className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
+                <div className="text-xs text-gray-700 leading-snug">
+                  <strong className="block text-gray-900">Đầy đủ CO/CQ & Hóa đơn VAT:</strong>
+                  Hồ sơ pháp lý xuất xứ rõ ràng cho mọi dự án.
                 </div>
               </div>
 
-              {/* Cột phải: Hình ảnh gia đình & thiết bị */}
-              <div className="relative flex justify-center items-center">
-                <div className="w-full max-w-md h-64 sm:h-80 rounded-2xl overflow-hidden shadow-xl border-4 border-white bg-white/40">
-                  <img
-                    key={bannerImage}
-                    src={bannerImage}
-                    alt={bannerTitle}
-                    className="w-full h-full object-cover object-center transition-all duration-700 transform hover:scale-105"
-                  />
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <Check className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
+                <div className="text-xs text-gray-700 leading-snug">
+                  <strong className="block text-gray-900">Kiểm định an toàn nghiêm ngặt:</strong>
+                  Đạt chuẩn an toàn điện y tế và an toàn bức xạ.
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <Check className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
+                <div className="text-xs text-gray-700 leading-snug">
+                  <strong className="block text-gray-900">Đào tạo chuyển giao kỹ thuật:</strong>
+                  Kỹ sư hỗ trợ lắp đặt và hướng dẫn vận hành tận nơi.
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <Check className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
+                <div className="text-xs text-gray-700 leading-snug">
+                  <strong className="block text-gray-900">Bảo hành 12 - 36 tháng:</strong>
+                  Bảo dưỡng định kỳ và cung cấp linh kiện thay thế chính hãng.
                 </div>
               </div>
             </div>
 
-            {/* Nút điều hướng Carousel < > (Khi có nhiều hơn 1 banner) */}
-            {hasBanners && banners.length > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={handlePrevBanner}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 hover:bg-black/60 text-white flex items-center justify-center transition cursor-pointer z-20 backdrop-blur-xs"
-                  title="Banner trước"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleNextBanner}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 hover:bg-black/60 text-white flex items-center justify-center transition cursor-pointer z-20 backdrop-blur-xs"
-                  title="Banner tiếp theo"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
+            <div className="pt-2">
+              <Link
+                to="/products"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-xl text-xs shadow-xs transition"
+              >
+                <span>Khám phá các dòng máy chẩn đoán</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
 
-                {/* Chấm chỉ số (Dots navigation) */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20 bg-black/20 backdrop-blur-xs px-3 py-1.5 rounded-full">
-                  {banners.map((_, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setCurrentBannerIndex(idx)}
-                      className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                        idx === currentBannerIndex
-                          ? 'w-6 bg-[#ff5722]'
-                          : 'w-2 bg-white/60 hover:bg-white'
-                      }`}
-                      title={`Chuyển đến Slide ${idx + 1}`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </section>
-        );
-      })()}
+          </div>
 
-      {/* 2. KHỐI DANH MỤC NỔI BẬT (Hình tròn Pastel Teal chuẩn thiết kế trong ảnh) */}
-      <section className="space-y-6 text-center">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-black text-gray-900 uppercase tracking-tight">
-            DANH MỤC NỔI BẬT
-          </h2>
-          <div className="w-16 h-1 bg-teal-600 mx-auto mt-2 rounded-full"></div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-6 pt-4 max-w-5xl mx-auto">
-          {categories.map((cat, idx) => (
-            <Link
-              key={cat.id || idx}
-              to={`/products?categoryId=${cat.id}`}
-              className="flex flex-col items-center group space-y-3"
-            >
-              {/* Vòng tròn icon xanh pastel */}
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-[#e6f4f6] border-2 border-teal-100 flex items-center justify-center shadow-xs group-hover:bg-[#13636b] group-hover:scale-110 group-hover:shadow-md transition duration-300">
-                <span className="text-3xl group-hover:scale-110 transition">
-                  {categoryIcons[idx % categoryIcons.length]}
-                </span>
-              </div>
-              <span className="font-bold text-gray-800 text-xs sm:text-sm group-hover:text-teal-700 transition line-clamp-2 text-center max-w-[160px]">
-                {cat.name}
-              </span>
-            </Link>
-          ))}
         </div>
       </section>
 
-      {/* 3. KHỐI SẢN PHẨM BÁN CHẠY (Clean White Cards) */}
-      <section className="space-y-6">
-        <div className="text-center">
-          <h2 className="text-xl sm:text-2xl font-black text-gray-900 uppercase tracking-tight">
-            SẢN PHẨM BÁN CHẠY
+      {/* --- BANNER 2: TƯ VẤN CHUYÊN SÂU & YÊU CẦU BÁO GIÁ LINH HOẠT --- */}
+      <section className="bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-10 lg:p-12 text-white shadow-xl overflow-hidden relative">
+        
+        {/* Background glow */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center relative z-10">
+          
+          {/* Cột trái: Nội dung giải thích chính sách báo giá (7 cols) */}
+          <div className="lg:col-span-7 space-y-5">
+            <span className="text-[11px] font-bold text-cyan-300 uppercase tracking-wider bg-white/10 px-3 py-1 rounded-full border border-white/15">
+              DÀNH CHO PHÒNG KHÁM, BỆNH VIỆN & ĐỐI TÁC SỈ
+            </span>
+
+            <div className="space-y-3">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight">
+                Chính Sách Báo Giá May Đo & Chiết Khấu Dự Án Ưu Đãi
+              </h2>
+              <p className="text-xs sm:text-sm text-blue-100 font-light leading-relaxed">
+                Do tính chất kỹ thuật và cấu hình tùy biến theo từng chuyên khoa, chúng tôi áp dụng cơ chế <strong>báo giá linh hoạt theo số lượng và nhu cầu thực tế</strong> nhằm mang lại mức chiết khấu tốt nhất cho các cơ sở y tế.
+              </p>
+            </div>
+
+            {/* 3 Step highlights */}
+            <div className="space-y-3 pt-2 text-xs">
+              <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10">
+                <span className="w-6 h-6 rounded-full bg-blue-500 text-white font-bold text-xs flex items-center justify-center shrink-0">1</span>
+                <span>Tìm kiếm và xem thông số kỹ thuật các model thiết bị trên website.</span>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10">
+                <span className="w-6 h-6 rounded-full bg-teal-500 text-white font-bold text-xs flex items-center justify-center shrink-0">2</span>
+                <span>Gửi danh sách thiết bị cần báo giá trực tuyến hoặc tải lên file Excel.</span>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/10">
+                <span className="w-6 h-6 rounded-full bg-amber-500 text-gray-950 font-bold text-xs flex items-center justify-center shrink-0">3</span>
+                <span>Nhận bảng báo giá chiết khấu dự án chính thức trong vòng <strong>30 phút – 2 giờ</strong>.</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3.5 pt-2">
+              <a
+                href="#quote-section"
+                className="px-6 py-3 bg-cyan-400 hover:bg-cyan-300 text-gray-950 font-black rounded-xl text-xs sm:text-sm shadow-md transition flex items-center gap-2"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                <span>Gửi Yêu Cầu Báo Giá Ngay</span>
+              </a>
+
+              <Link
+                to="/contact"
+                className="px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-xs sm:text-sm border border-white/20 transition flex items-center gap-2"
+              >
+                <PhoneCall className="w-4 h-4 text-cyan-300" />
+                <span>Liên Hệ Kỹ Sư Hóa Học Tư Vấn</span>
+              </Link>
+            </div>
+
+          </div>
+
+          {/* Cột phải: Hình ảnh kỹ sư tư vấn thiết bị (5 cols) */}
+          <div className="lg:col-span-5 relative">
+            <div className="aspect-4/3 sm:aspect-16/11 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20 bg-white/10">
+              <img
+                src={MedicalConsultImg}
+                alt="Chuyên gia kỹ thuật y sinh tư vấn dự án thiết bị y tế"
+                className="w-full h-full object-cover transform hover:scale-103 transition-transform duration-500"
+              />
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* --- BANNER 3: QUY TRÌNH ĐẶT HÀNG & GIAO HÀNG (HOW IT WORKS - 5 BƯỚC) --- */}
+      <section id="how-it-works" className="bg-white rounded-3xl border border-gray-200/90 p-6 sm:p-10 lg:p-12 shadow-xs space-y-8">
+        
+        <div className="text-center max-w-2xl mx-auto space-y-2">
+          <span className="text-[11px] font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+            QUY TRÌNH MUA SẮM MINH BẠCH
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+            5 Bước Mua Sắm & Bàn Giao Thiết Bị Y Tế
           </h2>
-          <div className="w-16 h-1 bg-teal-600 mx-auto mt-2 rounded-full"></div>
+          <p className="text-xs sm:text-sm text-gray-500">
+            Quy trình làm việc chuyên nghiệp, rõ ràng giúp quý khách hoàn toàn an tâm khi đầu tư trang thiết bị.
+          </p>
+        </div>
+
+        {/* 5 Connected Step Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          
+          {/* Step 1 */}
+          <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100/80 hover:bg-blue-50 hover:shadow-md transition-all duration-200 space-y-3 group">
+            <div className="flex items-center justify-between">
+              <span className="w-8 h-8 rounded-xl bg-blue-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                01
+              </span>
+              <Search className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform" />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900 text-sm">Tìm & Chọn Thiết Bị</h3>
+              <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                Tra cứu thông số kỹ thuật, tính năng và catalogue trên website.
+              </p>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className="p-5 bg-teal-50/50 rounded-2xl border border-teal-100/80 hover:bg-teal-50 hover:shadow-md transition-all duration-200 space-y-3 group">
+            <div className="flex items-center justify-between">
+              <span className="w-8 h-8 rounded-xl bg-teal-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                02
+              </span>
+              <FileSpreadsheet className="w-5 h-5 text-teal-600 group-hover:scale-110 transition-transform" />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900 text-sm">Gửi Yêu Cầu Báo Giá</h3>
+              <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                Điền form trực tuyến hoặc đính kèm file Excel danh mục cần mua.
+              </p>
+            </div>
+          </div>
+
+          {/* Step 3 */}
+          <div className="p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100/80 hover:bg-indigo-50 hover:shadow-md transition-all duration-200 space-y-3 group">
+            <div className="flex items-center justify-between">
+              <span className="w-8 h-8 rounded-xl bg-indigo-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                03
+              </span>
+              <Headphones className="w-5 h-5 text-indigo-600 group-hover:scale-110 transition-transform" />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900 text-sm">Tư Vấn & Báo Giá</h3>
+              <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                Kỹ sư hóa học liên hệ tư vấn cấu hình và gửi bảng giá chiết khấu trong 2h.
+              </p>
+            </div>
+          </div>
+
+          {/* Step 4 */}
+          <div className="p-5 bg-purple-50/50 rounded-2xl border border-purple-100/80 hover:bg-purple-50 hover:shadow-md transition-all duration-200 space-y-3 group">
+            <div className="flex items-center justify-between">
+              <span className="w-8 h-8 rounded-xl bg-purple-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                04
+              </span>
+              <ShieldCheck className="w-5 h-5 text-purple-600 group-hover:scale-110 transition-transform" />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900 text-sm">Hợp Đồng & Đặt Hàng</h3>
+              <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                Xác nhận đơn, ký hợp đồng kinh tế và cung cấp đầy đủ hóa đơn VAT.
+              </p>
+            </div>
+          </div>
+
+          {/* Step 5 */}
+          <div className="p-5 bg-emerald-50/50 rounded-2xl border border-emerald-100/80 hover:bg-emerald-50 hover:shadow-md transition-all duration-200 space-y-3 group">
+            <div className="flex items-center justify-between">
+              <span className="w-8 h-8 rounded-xl bg-emerald-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                05
+              </span>
+              <Truck className="w-5 h-5 text-emerald-600 group-hover:scale-110 transition-transform" />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900 text-sm">Giao & Lắp Đặt Tận Nơi</h3>
+              <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                Bàn giao, hướng dẫn vận hành kỹ thuật và kích hoạt bảo hành chính hãng.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 4. SẢN PHẨM NỔI BẬT & BÁN CHẠY (Clean Medical Product Cards) */}
+      {/* ========================================================================= */}
+      <section className="space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 border-b border-gray-200/80 pb-4">
+          <div>
+            <span className="text-[11px] font-bold text-teal-700 uppercase tracking-wider bg-teal-50 px-2.5 py-0.5 rounded-md border border-teal-200/60">
+              SẢN PHẨM NỔI BẬT
+            </span>
+            <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight mt-1.5">
+              Thiết Bị Y Tế Được Tin Dùng Nhiều Nhất
+            </h2>
+          </div>
+          <Link
+            to="/products"
+            className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 hover:underline shrink-0"
+          >
+            <span>Xem toàn bộ sản phẩm ({bestSellers.length}+)</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-xs text-gray-400">Đang tải sản phẩm bán chạy...</div>
+          <div className="py-16 text-center text-xs text-gray-400">Đang tải danh sách sản phẩm...</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {bestSellers.map((product) => {
@@ -389,16 +759,20 @@ export const HomePage = () => {
               return (
                 <div
                   key={product.id}
-                  className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-xl hover:-translate-y-1 transition duration-300 flex flex-col justify-between group"
+                  className="bg-white rounded-2xl border border-gray-200/90 overflow-hidden shadow-2xs hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between group"
                 >
-                  <Link to={`/products/${product.id}`} className="relative aspect-square overflow-hidden bg-gray-50 p-4 block">
+                  {/* Image container */}
+                  <Link to={`/products/${product.id}`} className="relative aspect-square overflow-hidden bg-gray-50/70 p-5 block">
                     <img
-                      src={product.primaryImageUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600'}
+                      src={product.primaryImageUrl || DEFAULT_NO_IMAGE}
+                      onError={handleImageError}
                       alt={product.name}
-                      className="w-full h-full object-contain group-hover:scale-105 transition duration-300"
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                     />
+                    
+                    {/* Category tag */}
                     {product.category && (
-                      <span className="absolute top-3 left-3 bg-teal-50 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded border border-teal-200">
+                      <span className="absolute top-3 left-3 bg-blue-50/90 backdrop-blur-xs text-blue-800 text-[10px] font-bold px-2.5 py-0.5 rounded-md border border-blue-200/60 shadow-2xs">
                         {product.category.name}
                       </span>
                     )}
@@ -420,32 +794,44 @@ export const HomePage = () => {
                     </button>
                   </Link>
 
+                  {/* Body & Actions */}
                   <div className="p-4 space-y-3 flex-1 flex flex-col justify-between border-t border-gray-100">
                     <div>
                       <Link to={`/products/${product.id}`} className="block">
-                        <h3 className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-2 group-hover:text-teal-700 transition">
+                        <h3 className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-2 group-hover:text-blue-600 transition">
                           {product.name}
                         </h3>
                       </Link>
                       <p className="text-[11px] text-gray-500 line-clamp-1 mt-1">
-                        {product.description || 'Chính hãng CO/CQ'}
+                        {product.description || 'Chính hãng đầy đủ CO/CQ kiểm định'}
                       </p>
                     </div>
 
                     <div className="pt-2 flex items-center justify-between border-t border-gray-100">
-                      <span className="font-bold text-teal-800 text-xs sm:text-sm">
-                        {formatPrice(product.price)}
-                      </span>
+                      <div>
+                        <span className="text-[10px] text-gray-400 block font-medium">Giá niêm yết</span>
+                        <span className="font-black text-blue-700 text-xs sm:text-sm">
+                          {formatPrice(product.price)}
+                        </span>
+                      </div>
 
-                      <button
-                        type="button"
-                        onClick={() => addToCart(product)}
-                        className="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg transition shadow-xs flex items-center gap-1 cursor-pointer"
-                        title="Thêm vào giỏ"
-                      >
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                        <span>Mua</span>
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <Link
+                          to={`/products/${product.id}`}
+                          className="px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition"
+                          title="Xem chi tiết"
+                        >
+                          Chi tiết
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => addToCart(product)}
+                          className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-xs cursor-pointer"
+                          title="Thêm vào giỏ hàng"
+                        >
+                          <ShoppingBag className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -455,21 +841,86 @@ export const HomePage = () => {
         )}
       </section>
 
-      {/* 4. MODULE GỬI FILE YÊU CẦU BÁO GIÁ & TƯ VẤN Y TẾ TRỰC TUYẾN */}
-      <section id="quote-section" className="bg-gradient-to-br from-[#13636b] to-[#0a464c] rounded-3xl p-6 sm:p-10 text-white shadow-xl space-y-8">
-        <div className="max-w-3xl mx-auto text-center space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-400 text-gray-950 rounded-full text-xs font-black">
+      {/* ========================================================================= */}
+      {/* 5. MODULE GỬI FILE YÊU CẦU BÁO GIÁ & TƯ VẤN Y TẾ TRỰC TUYẾN */}
+      {/* ========================================================================= */}
+      <section id="quote-section" className="bg-gradient-to-br from-teal-900 via-slate-900 to-blue-950 rounded-3xl p-6 sm:p-10 text-white shadow-xl space-y-8">
+        
+        {/* Header Section */}
+        <div className="max-w-3xl mx-auto text-center space-y-3">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-teal-400 text-gray-950 rounded-full text-xs font-black shadow-xs">
             <FileSpreadsheet className="w-4 h-4" />
-            <span>YÊU CẦU BÁO GIÁ SỈ & ĐẶT HÀNG QUA FILE</span>
+            <span>YÊU CẦU BÁO GIÁ SỈ & ĐẶT HÀNG QUA FILE EXCEL</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
-            Gửi Danh Sách Thiết Bị Cần Báo Giá (Excel / PDF / Word)
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-snug">
+            Gửi Yêu Cầu Báo Giá Thiết Bị & Vật Tư Y Tế
           </h2>
           <p className="text-xs sm:text-sm text-teal-100 font-light leading-relaxed">
-            Dành cho phòng khám, bệnh viện, nhà thuốc và khách mua sỉ: Đính kèm file danh sách thiết bị cần mua để nhận bảng báo giá chiết khấu đặc biệt trong 30 phút.
+            Hệ thống hỗ trợ tiếp nhận danh sách báo giá trực tiếp dành riêng cho Bác sĩ, Phòng khám, Bệnh viện và Khách hàng mua sỉ.
           </p>
         </div>
 
+        {/* 3 Khối giải thích chi tiết mục đích tính năng Báo Giá */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
+          
+          {/* Card 1: Sản phẩm chưa có trên web */}
+          <div className="p-5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/15 space-y-2 hover:bg-white/15 transition">
+            <div className="w-9 h-9 rounded-xl bg-cyan-400/20 text-cyan-300 flex items-center justify-center font-bold">
+              <Search className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-sm text-white">1. Sản phẩm chưa có trên Web</h3>
+            <p className="text-xs text-teal-100 leading-relaxed font-light">
+              Bạn cần tìm dòng máy chuyên khoa sâu, model đặc thù hoặc vật tư hiếm chưa đăng tải trên web? Chỉ cần ghi tên máy/model vào file, shop sẽ liên hệ các hãng nhập khẩu báo giá cho bạn.
+            </p>
+          </div>
+
+          {/* Card 2: Báo giá sỉ & Dự án phòng khám */}
+          <div className="p-5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/15 space-y-2 hover:bg-white/15 transition">
+            <div className="w-9 h-9 rounded-xl bg-emerald-400/20 text-emerald-300 flex items-center justify-center font-bold">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-sm text-white">2. Báo giá Sỉ & Trọn Gói Dự Án</h3>
+            <p className="text-xs text-teal-100 leading-relaxed font-light">
+              Dành cho cơ sở y tế đầu tư trọn gói nhiều trang thiết bị: Nhận mức chiết khấu đại lý tốt nhất, tối ưu chi phí hơn nhiều so với giá bán lẻ thông thường.
+            </p>
+          </div>
+
+          {/* Card 3: Báo giá trực tiếp & Hợp đồng */}
+          <div className="p-5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/15 space-y-2 hover:bg-white/15 transition">
+            <div className="w-9 h-9 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center font-bold">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-sm text-white">3. Báo Giá Trực Tiếp Nhanh Chóng</h3>
+            <p className="text-xs text-teal-100 leading-relaxed font-light">
+              Trao đổi trực tiếp 1-1 với đội ngũ kỹ sư hóa học & kỹ thuật y sinh, hỗ trợ lập hồ sơ thầu, cung cấp hóa đơn đỏ VAT và ký hợp đồng kinh tế minh bạch, cam kết thời gian giao hàng.
+            </p>
+          </div>
+
+        </div>
+
+        {/* Action Download Template Box */}
+        <div className="max-w-4xl mx-auto bg-gradient-to-r from-teal-800/60 to-blue-900/60 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-teal-400/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-left">
+            <div className="w-10 h-10 rounded-xl bg-teal-400 text-gray-950 flex items-center justify-center font-black shrink-0 shadow-md">
+              <FileSpreadsheet className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-bold text-sm text-white">Chưa có danh sách sẵn? Tải ngay file mẫu Excel chuẩn</p>
+              <p className="text-xs text-teal-200">File mẫu định dạng `.csv/.xlsx` có sẵn các cột thông tin thiết bị, số lượng và thông số kỹ thuật.</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={downloadQuoteExcelTemplate}
+            className="w-full sm:w-auto px-5 py-2.5 bg-teal-400 hover:bg-teal-300 text-gray-950 font-black rounded-xl text-xs shadow-md transition flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+          >
+            <DownloadCloud className="w-4 h-4" />
+            <span>TẢI MẪU EXCEL BÁO GIÁ</span>
+          </button>
+        </div>
+
+        {/* Form Gửi Yêu Cầu */}
         <form onSubmit={handleSubmitConsultation} className="max-w-4xl mx-auto bg-white text-gray-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-5">
           {isAuthenticated && (
             <div className="p-3 bg-teal-50 border border-teal-200 rounded-xl text-xs text-teal-900 flex items-center justify-between">
@@ -486,7 +937,7 @@ export const HomePage = () => {
               <input
                 type="text"
                 required
-                placeholder="Nguyễn Văn An"
+                placeholder="BS. Nguyễn Văn An"
                 value={consultForm.fullName}
                 onChange={(e) => setConsultForm({ ...consultForm, fullName: e.target.value })}
                 className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-teal-600"
@@ -500,7 +951,7 @@ export const HomePage = () => {
               <input
                 type="tel"
                 required
-                placeholder="0901 000 001"
+                placeholder="0914 066 662"
                 value={consultForm.phone}
                 onChange={(e) => setConsultForm({ ...consultForm, phone: e.target.value })}
                 className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-teal-600"
@@ -513,7 +964,7 @@ export const HomePage = () => {
               </label>
               <input
                 type="email"
-                placeholder="email@example.com"
+                placeholder="bacsi@phongkham.vn"
                 value={consultForm.email}
                 onChange={(e) => setConsultForm({ ...consultForm, email: e.target.value })}
                 className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-teal-600"
@@ -528,7 +979,7 @@ export const HomePage = () => {
             <input
               type="text"
               required
-              placeholder="Ví dụ: Báo giá 10 máy đo huyết áp Omron và vật tư sơ cứu cho phòng khám"
+              placeholder="Ví dụ: Báo giá 10 máy theo dõi bệnh nhân và vật tư hồi sức cho phòng khám"
               value={consultForm.title}
               onChange={(e) => setConsultForm({ ...consultForm, title: e.target.value })}
               className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-teal-600"
@@ -542,7 +993,7 @@ export const HomePage = () => {
             <textarea
               required
               rows="3"
-              placeholder="Mô tả cụ thể số lượng, model thiết bị hoặc yêu cầu tư vấn kỹ thuật..."
+              placeholder="Mô tả cụ thể số lượng, model thiết bị, tên phòng khám hoặc yêu cầu kỹ thuật đặc thù..."
               value={consultForm.content}
               onChange={(e) => setConsultForm({ ...consultForm, content: e.target.value })}
               className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-teal-600"
@@ -551,9 +1002,20 @@ export const HomePage = () => {
 
           {/* Upload file đính kèm (Excel, Word, PDF, Ảnh) */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">
-              Đính kèm file danh sách thiết bị (Excel .xlsx/.xls, Word .docx, PDF, Ảnh - Tối đa 25MB)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-bold text-gray-700">
+                Đính kèm file danh sách thiết bị (Excel .xlsx/.xls, Word .docx, PDF, Ảnh - Tối đa 25MB)
+              </label>
+              <button
+                type="button"
+                onClick={downloadQuoteExcelTemplate}
+                className="text-[11px] font-bold text-teal-700 hover:text-teal-800 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <DownloadCloud className="w-3.5 h-3.5" />
+                <span>Tải file mẫu Excel nếu chưa có</span>
+              </button>
+            </div>
+            
             <div className="border-2 border-dashed border-gray-300 hover:border-teal-600 rounded-2xl p-4 text-center bg-gray-50 transition">
               {selectedFile ? (
                 <div className="flex items-center justify-between bg-teal-50 border border-teal-200 p-2.5 rounded-xl text-xs text-teal-900">
@@ -602,7 +1064,7 @@ export const HomePage = () => {
             <button
               type="submit"
               disabled={submittingConsult || cooldown > 0}
-              className="w-full sm:w-auto px-8 py-3 bg-[#ff5722] hover:bg-[#f4511e] text-white font-black rounded-xl text-xs sm:text-sm shadow-lg transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto px-8 py-3 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-xl text-xs sm:text-sm shadow-lg transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submittingConsult ? (
                 <>
@@ -625,10 +1087,12 @@ export const HomePage = () => {
         </form>
       </section>
 
-      {/* 5. KHU VỰC CÂU HỎI THƯỜNG GẶP (FAQ ACCORDION) */}
-      <section className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-10 shadow-xs space-y-8">
+      {/* ========================================================================= */}
+      {/* 6. KHU VỰC CÂU HỎI THƯỜNG GẶP (FAQ ACCORDION) */}
+      {/* ========================================================================= */}
+      <section className="bg-white rounded-3xl border border-gray-200/90 p-6 sm:p-10 shadow-xs space-y-8">
         <div className="text-center max-w-2xl mx-auto space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-teal-50 text-teal-700 rounded-full text-xs font-bold border border-teal-100">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold border border-blue-100">
             <HelpCircle className="w-3.5 h-3.5" />
             <span>GIẢI ĐÁP THẮC MẮC (FAQ)</span>
           </div>
@@ -681,7 +1145,7 @@ export const HomePage = () => {
                 key={faq.id}
                 className={`border rounded-2xl transition overflow-hidden ${
                   isOpen
-                    ? 'border-teal-300 bg-teal-50/20 shadow-2xs ring-1 ring-teal-100'
+                    ? 'border-blue-300 bg-blue-50/20 shadow-2xs ring-1 ring-blue-100'
                     : 'border-gray-200 bg-white hover:border-gray-300'
                 }`}
               >
@@ -694,7 +1158,7 @@ export const HomePage = () => {
                     <span
                       className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${
                         isOpen
-                          ? 'bg-teal-700 text-white shadow-xs'
+                          ? 'bg-blue-600 text-white shadow-xs'
                           : 'bg-gray-100 text-gray-600'
                       }`}
                     >
@@ -707,7 +1171,7 @@ export const HomePage = () => {
                   <div
                     className={`p-1.5 rounded-lg shrink-0 transition ${
                       isOpen
-                        ? 'bg-teal-100 text-teal-800 rotate-180'
+                        ? 'bg-blue-100 text-blue-800 rotate-180'
                         : 'bg-gray-100 text-gray-400'
                     }`}
                   >
@@ -716,13 +1180,13 @@ export const HomePage = () => {
                 </button>
 
                 {isOpen && (
-                  <div className="px-5 pb-5 pt-1 text-xs text-gray-600 leading-relaxed space-y-3 border-t border-teal-100/60 animate-in fade-in duration-200">
+                  <div className="px-5 pb-5 pt-1 text-xs text-gray-600 leading-relaxed space-y-3 border-t border-blue-100/60 animate-in fade-in duration-200">
                     <p>{faq.answer}</p>
                     {faq.link && (
                       <div>
                         <Link
                           to={faq.link}
-                          className="inline-flex items-center gap-1 font-bold text-teal-700 hover:text-teal-800 hover:underline text-xs"
+                          className="inline-flex items-center gap-1 font-bold text-blue-600 hover:text-blue-700 hover:underline text-xs"
                         >
                           <span>{faq.linkText}</span>
                         </Link>
@@ -736,10 +1200,12 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* 6. DẢI CHỨNG NHẬN TIÊU CHUẨN Y TẾ & THANH TOÁN */}
-      <section className="bg-white rounded-2xl border border-gray-200 p-6 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
+      {/* ========================================================================= */}
+      {/* 7. DẢI CHỨNG NHẬN TIÊU CHUẨN Y TẾ QUỐC TẾ & BỘ Y TẾ */}
+      {/* ========================================================================= */}
+      <section className="bg-white rounded-2xl border border-gray-200/90 p-6 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-3">
-          <ShieldCheck className="w-8 h-8 text-teal-700 shrink-0" />
+          <ShieldCheck className="w-8 h-8 text-blue-600 shrink-0" />
           <div>
             <h4 className="font-bold text-gray-900 text-xs sm:text-sm">Chứng Nhận Chuẩn Y Tế Quốc Tế & Bộ Y Tế</h4>
             <p className="text-[11px] text-gray-500">100% thiết bị nhập khẩu chính hãng có giấy tờ CO/CQ và hóa đơn VAT</p>
@@ -747,13 +1213,14 @@ export const HomePage = () => {
         </div>
 
         {/* Badges tiêu chuẩn y tế */}
-        <div className="flex flex-wrap items-center gap-4 text-xs font-black text-gray-700">
-          <span className="px-3 py-1 bg-gray-100 rounded border border-gray-300">FDA Approved</span>
-          <span className="px-3 py-1 bg-gray-100 rounded border border-gray-300">CE Marking</span>
-          <span className="px-3 py-1 bg-gray-100 rounded border border-gray-300">ISO 9001</span>
-          <span className="px-3 py-1 bg-teal-50 text-teal-800 rounded border border-teal-200">Bộ Y Tế</span>
+        <div className="flex flex-wrap items-center gap-3 text-xs font-black text-gray-700">
+          <span className="px-3 py-1 bg-gray-100 rounded-lg border border-gray-300">FDA Approved</span>
+          <span className="px-3 py-1 bg-gray-100 rounded-lg border border-gray-300">CE Marking</span>
+          <span className="px-3 py-1 bg-gray-100 rounded-lg border border-gray-300">ISO 13485</span>
+          <span className="px-3 py-1 bg-blue-50 text-blue-800 rounded-lg border border-blue-200">Bộ Y Tế</span>
         </div>
       </section>
+
     </div>
   );
 };

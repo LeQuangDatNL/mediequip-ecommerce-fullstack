@@ -20,26 +20,45 @@ import {
   Navigation,
   Sparkles,
   User,
-  Phone
+  Phone,
+  QrCode,
+  Banknote,
+  Copy,
+  Check,
+  FileSpreadsheet,
+  Headphones
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { handleImageError, DEFAULT_NO_IMAGE } from '../../utils/imageHelper';
 
 export const CartPage = () => {
-  const { cartItems, updateQuantity, removeFromCart, clearCart, totalCount, totalAmount } = useCart();
+  const { cartItems, updateQuantity, removeFromCart, clearCart, totalCount } = useCart();
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [isMapOpen, setIsMapOpen] = useState(false);
+  const [copiedBank, setCopiedBank] = useState(false);
 
   const [formData, setFormData] = useState({
-    recipientName: user?.fullName || '',
+    recipientName: user?.fullName || user?.username || '',
     phone: user?.phone || '',
     address: '',
-    paymentMethod: 'COD',
+    paymentMethod: 'COD', // 'COD' hoặc 'QR'
     note: '',
   });
   const [orderSuccess, setOrderSuccess] = useState(false);
+
+  // Tự động điền thông tin người nhận nếu đã đăng nhập
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setFormData((prev) => ({
+        ...prev,
+        recipientName: prev.recipientName || user.fullName || user.username || '',
+        phone: prev.phone || user.phone || '',
+      }));
+    }
+  }, [isAuthenticated, user]);
 
   // Tải danh sách địa chỉ đã lưu của khách hàng
   useEffect(() => {
@@ -88,9 +107,11 @@ export const CartPage = () => {
     }));
   };
 
-  const formatPrice = (price) => {
-    if (price === null || price === undefined) return '0 ₫';
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  const handleCopyBank = () => {
+    navigator.clipboard.writeText('0914066662');
+    setCopiedBank(true);
+    toast.success('Đã sao chép số điện thoại / Zalo thanh toán!');
+    setTimeout(() => setCopiedBank(false), 2500);
   };
 
   const handleCheckoutSubmit = (e) => {
@@ -102,36 +123,88 @@ export const CartPage = () => {
 
     setOrderSuccess(true);
     clearCart();
-    toast.success('Đặt hàng thành công! Đội ngũ Kim Liên Medical sẽ liên hệ xác nhận.');
+    toast.success('Gửi đơn hàng thành công! Đội ngũ Kỹ sư Kim Liên Medical sẽ liên hệ báo giá & xác nhận.');
   };
 
   if (orderSuccess) {
     return (
-      <div className="max-w-2xl mx-auto py-12 px-4 text-center space-y-6 bg-white rounded-3xl border border-gray-100 shadow-xl p-8">
+      <div className="max-w-2xl mx-auto py-10 px-4 text-center space-y-6 bg-white rounded-3xl border border-gray-100 shadow-xl p-6 sm:p-8 animate-fade-in">
         <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-md">
           <CheckCircle2 className="w-10 h-10" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-black text-gray-900">Đặt Hàng Thành Công!</h2>
+          <h2 className="text-2xl font-black text-gray-900">Gửi Đơn Hàng Thành Công!</h2>
           <p className="text-xs sm:text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
-            Cảm ơn bạn đã tin tưởng <strong>Thiết Bị Y Tế Kim Liên</strong>. Đơn hàng của bạn đã được ghi nhận vào hệ thống và đang được xử lý giao hỏa tốc.
+            Cảm ơn bạn đã đặt hàng tại <strong>MediEquip Vietnam - Thiết Bị Y Tế Kim Liên</strong>. Đội ngũ Kỹ sư y tế sẽ liên hệ qua số điện thoại <strong>{formData.phone}</strong> trong 15-30 phút để báo giá chiết khấu ưu đãi và chốt lịch giao hàng.
           </p>
         </div>
 
-        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-xs text-left space-y-1.5 max-w-md mx-auto">
-          <p className="font-bold text-gray-800">Thông tin nhận hàng:</p>
-          <p>Người nhận: <span className="font-semibold text-gray-900">{formData.recipientName}</span></p>
-          <p>Số điện thoại: <span className="font-semibold text-gray-900">{formData.phone}</span></p>
-          <p>Địa chỉ: <span className="font-semibold text-gray-900">{formData.address}</span></p>
-          <p>Hình thức: <span className="font-semibold text-indigo-600">{formData.paymentMethod === 'COD' ? 'Thanh toán tiền mặt khi nhận hàng (COD)' : 'Thanh toán VNPay QR'}</span></p>
+        <div className="p-4 sm:p-5 bg-gray-50 rounded-2xl border border-gray-200 text-xs text-left space-y-2 max-w-lg mx-auto">
+          <p className="font-bold text-gray-900 text-sm border-b border-gray-200 pb-2 flex items-center gap-1.5">
+            <Truck className="w-4 h-4 text-teal-700" />
+            <span>Thông tin đơn hàng & nhận thiết bị:</span>
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-700">
+            <p>Người nhận: <strong className="text-gray-900">{formData.recipientName}</strong></p>
+            <p>Số điện thoại: <strong className="text-gray-900">{formData.phone}</strong></p>
+          </div>
+          <p className="text-gray-700">Địa chỉ giao: <strong className="text-gray-900">{formData.address}</strong></p>
+          <p className="text-gray-700">
+            Hình thức: <strong className="text-teal-800">
+              {formData.paymentMethod === 'COD'
+                ? 'Thanh toán tiền mặt khi nhận hàng (COD)'
+                : 'Chuyển khoản qua mã QR Ngân Hàng'}
+            </strong>
+          </p>
+          <p className="text-gray-700">
+            Giá thành: <strong className="text-emerald-700 font-black">Báo giá chiết khấu trực tiếp khi gọi xác nhận</strong>
+          </p>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
+        {/* Nếu khách hàng chọn chuyển khoản QR thì hiện thông tin QR placeholder */}
+        {formData.paymentMethod === 'QR' && (
+          <div className="p-5 bg-teal-50/70 rounded-2xl border border-teal-200 max-w-lg mx-auto text-center space-y-3">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-700 text-white text-[11px] font-bold rounded-full">
+              <QrCode className="w-3.5 h-3.5" />
+              <span>MÃ QR THANH TOÁN (TẠM THỜI - ĐANG CẬP NHẬT)</span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-1">
+              <div className="w-36 h-36 bg-gray-50 p-3 rounded-2xl border-2 border-dashed border-teal-300 shadow-xs flex flex-col items-center justify-center shrink-0 text-teal-700">
+                <QrCode className="w-12 h-12 text-teal-600/70 mb-1 animate-pulse" />
+                <span className="text-[11px] font-black text-teal-900">QR THANH TOÁN</span>
+                <span className="text-[9px] text-gray-500 font-medium">Đang cập nhật</span>
+              </div>
+
+              <div className="text-left text-xs space-y-1.5 flex-1">
+                <p className="text-gray-600">Kênh thanh toán: <strong className="text-gray-900">Mã QR / ZaloPay / Chuyển khoản</strong></p>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-600">Số ĐT / Zalo: <strong className="text-teal-900 font-mono text-sm">0914 066 662</strong></span>
+                  <button
+                    type="button"
+                    onClick={handleCopyBank}
+                    className="p-1 text-teal-700 hover:text-teal-900 hover:bg-teal-100 rounded transition cursor-pointer"
+                    title="Sao chép số điện thoại"
+                  >
+                    {copiedBank ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <p className="text-gray-600">Chủ tài khoản: <strong className="text-gray-900 uppercase">THIẾT BỊ Y TẾ KIM LIÊN</strong></p>
+                <p className="text-[11px] text-gray-500 italic">Nội dung chuyển khoản: <strong className="text-teal-800">DAT HANG {formData.phone}</strong></p>
+              </div>
+            </div>
+            <p className="text-[11px] text-gray-500 pt-1">
+              Mã QR thanh toán chính thức sẽ được Kỹ sư Kim Liên gửi trực tiếp qua Zalo khi xác nhận đơn hàng.
+            </p>
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <Link
             to="/products"
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl text-xs transition shadow-md"
+            className="px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-2xl text-xs transition shadow-md"
           >
-            Tiếp tục mua sắm
+            Tiếp tục xem thiết bị khác
           </Link>
           <Link
             to="/orders"
@@ -198,16 +271,20 @@ export const CartPage = () => {
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-gray-50 overflow-hidden border border-gray-100 shrink-0">
                     <img
-                      src={item.primaryImageUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=200'}
+                      src={item.primaryImageUrl || DEFAULT_NO_IMAGE}
                       alt={item.name}
+                      onError={handleImageError}
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 text-sm max-w-sm">{item.name}</h3>
-                    <p className="text-xs font-black text-indigo-700 mt-1">
-                      {formatPrice(item.price)}
-                    </p>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <span className="text-[11px] font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-md border border-teal-200/70 inline-flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-teal-600" />
+                        Báo giá ưu đãi theo số lượng
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -260,27 +337,38 @@ export const CartPage = () => {
 
         {/* Cột Phải (1 Phần): Tóm Tắt & Đặt Hàng */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-xs p-6 space-y-6">
-          <h2 className="text-base font-black text-gray-900 border-b border-gray-100 pb-3">
-            Tóm Tắt Đơn Hàng
+          <h2 className="text-base font-black text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">
+            <FileSpreadsheet className="w-4 h-4 text-teal-700" />
+            <span>Tóm Tắt Đơn Đặt Hàng</span>
           </h2>
 
           <div className="space-y-3 text-xs">
-            <div className="flex items-center justify-between text-gray-500">
-              <span>Tổng số lượng:</span>
-              <strong className="text-gray-900 font-bold">{totalCount} sản phẩm</strong>
+            <div className="flex items-center justify-between text-gray-600">
+              <span>Tổng số lượng đặt:</span>
+              <strong className="text-gray-900 font-bold">{totalCount} thiết bị</strong>
             </div>
-            <div className="flex items-center justify-between text-gray-500">
-              <span>Phí vận chuyển:</span>
-              <span className="text-emerald-600 font-bold">Miễn phí (Hỏa tốc 2H)</span>
+            <div className="flex items-center justify-between text-gray-600">
+              <span>Vận chuyển & Bàn giao:</span>
+              <span className="text-emerald-600 font-bold">Miễn phí toàn quốc</span>
             </div>
-            <div className="flex items-center justify-between text-gray-500">
-              <span>Tạm tính:</span>
-              <strong className="text-gray-900 font-bold">{formatPrice(totalAmount)}</strong>
+            <div className="flex items-center justify-between text-gray-600">
+              <span>Chính sách giá:</span>
+              <span className="text-teal-700 font-bold">Chiết khấu trực tiếp theo đơn</span>
             </div>
             <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-sm">
-              <span className="font-bold text-gray-900">Tổng thanh toán:</span>
-              <span className="font-black text-teal-800 text-lg">{formatPrice(totalAmount)}</span>
+              <span className="font-bold text-gray-900">Tổng tiền dự kiến:</span>
+              <span className="font-black text-teal-800 text-sm sm:text-base">Liên hệ báo giá</span>
             </div>
+          </div>
+
+          <div className="p-3 bg-teal-50/70 rounded-2xl border border-teal-100 text-[11px] text-teal-900 space-y-1">
+            <strong className="block font-bold text-teal-950 flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+              Lưu ý về giá & chiết khấu:
+            </strong>
+            <p className="text-teal-800 leading-relaxed font-light">
+              Do đặc thù thiết bị y tế có mức giá ưu đãi tùy theo số lượng và cấu hình phụ kiện. Sau khi bạn gửi đơn, đội ngũ Kỹ sư Kim Liên sẽ gọi điện chốt bảng giá tốt nhất và xác nhận lịch giao.
+            </p>
           </div>
 
           {/* Form Thông Tin Nhận Hàng Nhanh */}
@@ -342,7 +430,7 @@ export const CartPage = () => {
               <input
                 type="tel"
                 required
-                placeholder="Ví dụ: 0901000003"
+                placeholder="Ví dụ: 0914 066 662"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-teal-700"
@@ -373,32 +461,111 @@ export const CartPage = () => {
               ></textarea>
             </div>
 
-            <div>
-              <label className="block text-[11px] font-bold text-gray-700 mb-1">
-                Phương thức thanh toán
+            {/* Lựa chọn phương thức thanh toán */}
+            <div className="space-y-2">
+              <label className="block text-[11px] font-bold text-gray-700">
+                Phương thức thanh toán *
               </label>
-              <select
-                value={formData.paymentMethod}
-                onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-teal-700 font-medium"
-              >
-                <option value="COD">Thanh toán khi nhận hàng (COD)</option>
-                <option value="VNPAY">Thanh toán trực tuyến VNPay QR</option>
-              </select>
+              <div className="grid grid-cols-1 gap-2">
+                <label
+                  className={`p-3 rounded-2xl border-2 flex items-start gap-3 cursor-pointer transition ${
+                    formData.paymentMethod === 'COD'
+                      ? 'border-teal-700 bg-teal-50/50 shadow-2xs'
+                      : 'border-gray-200 hover:border-teal-300 bg-white'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="COD"
+                    checked={formData.paymentMethod === 'COD'}
+                    onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                    className="mt-1 text-teal-700 focus:ring-teal-600"
+                  />
+                  <div className="space-y-0.5">
+                    <strong className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                      <Banknote className="w-4 h-4 text-teal-700" />
+                      <span>Thanh toán khi nhận hàng (COD)</span>
+                    </strong>
+                    <p className="text-[11px] text-gray-500">
+                      Nhận hàng, kiểm tra thiết bị & giấy tờ kiểm định CO/CQ đầy đủ rồi mới thanh toán tiền mặt.
+                    </p>
+                  </div>
+                </label>
+
+                <label
+                  className={`p-3 rounded-2xl border-2 flex items-start gap-3 cursor-pointer transition ${
+                    formData.paymentMethod === 'QR'
+                      ? 'border-teal-700 bg-teal-50/50 shadow-2xs'
+                      : 'border-gray-200 hover:border-teal-300 bg-white'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="QR"
+                    checked={formData.paymentMethod === 'QR'}
+                    onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                    className="mt-1 text-teal-700 focus:ring-teal-600"
+                  />
+                  <div className="space-y-0.5 flex-1">
+                    <div className="flex items-center justify-between">
+                      <strong className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                        <QrCode className="w-4 h-4 text-emerald-600" />
+                        <span>Chuyển khoản qua mã QR Ngân Hàng</span>
+                      </strong>
+                      <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                        Tiện lợi
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-500">
+                      Quét mã QR bằng App Ngân hàng hoặc ví ZaloPay/MoMo sau khi chốt đơn.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Khung hiển thị thông tin QR nếu chọn chuyển khoản QR */}
+              {formData.paymentMethod === 'QR' && (
+                <div className="mt-2 p-3 bg-emerald-50/70 rounded-2xl border border-emerald-200 space-y-2.5 animate-fade-in">
+                  <div className="flex items-center gap-3">
+                    <div className="w-16 h-16 bg-white p-2 rounded-xl border border-dashed border-emerald-300 shadow-2xs shrink-0 flex flex-col items-center justify-center text-teal-700">
+                      <QrCode className="w-7 h-7 text-emerald-600/80 mb-0.5" />
+                      <span className="text-[8px] font-bold text-teal-800">QR Code</span>
+                    </div>
+                    <div className="text-[11px] space-y-0.5 text-gray-700 flex-1">
+                      <p>Kênh: <strong className="text-gray-900">Mã QR Thanh Toán / ZaloPay</strong></p>
+                      <div className="flex items-center gap-1.5">
+                        <span>Số ĐT / Zalo: <strong className="text-teal-900 font-mono text-xs">0914 066 662</strong></span>
+                        <button
+                          type="button"
+                          onClick={handleCopyBank}
+                          className="p-0.5 hover:bg-emerald-200/60 rounded text-teal-800 transition cursor-pointer"
+                          title="Sao chép số điện thoại"
+                        >
+                          {copiedBank ? <Check className="w-3 h-3 text-emerald-700" /> : <Copy className="w-3 h-3" />}
+                        </button>
+                      </div>
+                      <p>Chủ TK: <strong className="text-gray-900 uppercase text-[10px]">THIẾT BỊ Y TẾ KIM LIÊN</strong></p>
+                      <p className="text-[10px] text-gray-500 italic">Mã QR chính thức sẽ được gửi qua Zalo cùng bảng giá chiết khấu.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <button
               type="submit"
-              className="w-full py-3.5 bg-teal-700 hover:bg-teal-800 text-white font-extrabold rounded-2xl text-xs shadow-lg transition flex items-center justify-center gap-2 cursor-pointer mt-2"
+              className="w-full py-3.5 bg-teal-700 hover:bg-teal-800 text-white font-black rounded-2xl text-xs sm:text-sm shadow-lg hover:shadow-xl transition flex items-center justify-center gap-2 cursor-pointer mt-2"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Xác Nhận Đặt Hàng Ngay</span>
+              <span>GỬI ĐƠN HÀNG & NHẬN BÁO GIÁ NGAY</span>
             </button>
           </form>
 
           <div className="p-3 bg-teal-50/60 rounded-2xl border border-teal-100 flex items-start gap-2.5 text-[11px] text-teal-900">
             <ShieldCheck className="w-4 h-4 text-teal-700 shrink-0 mt-0.5" />
-            <span>Thiết Bị Y Tế Kim Liên cam kết kiểm tra hàng trước khi thanh toán & bảo hành 1 đổi 1.</span>
+            <span>MediEquip Vietnam cam kết bàn giao đúng model, đầy đủ CO/CQ và bảo hành chính hãng tận nơi.</span>
           </div>
         </div>
       </div>

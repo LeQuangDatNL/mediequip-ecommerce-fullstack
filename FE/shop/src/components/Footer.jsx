@@ -11,7 +11,8 @@ import {
   ExternalLink,
   MessageCircle,
   Clock,
-  Heart
+  Heart,
+  Code2
 } from 'lucide-react';
 
 export const Footer = () => {
@@ -47,8 +48,8 @@ export const Footer = () => {
           <div className="flex items-center gap-4 p-4 rounded-2xl bg-gray-800/60 border border-gray-700/50">
             <Headphones className="w-8 h-8 text-cyan-400 shrink-0" />
             <div>
-              <h4 className="font-bold text-white text-sm">Tư vấn Dược sĩ 24/7</h4>
-              <p className="text-xs text-gray-400">Hotline 1900 1234</p>
+              <h4 className="font-bold text-white text-sm">Tư vấn Kỹ sư 24/7</h4>
+              <p className="text-xs text-gray-400">Hotline 0914 066 662</p>
             </div>
           </div>
         </div>
@@ -84,7 +85,11 @@ export const Footer = () => {
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-indigo-400 shrink-0" />
-                <span>Hotline: <strong className="text-white">1900 1234</strong> | <strong>0901 000 001</strong></span>
+                <span>Hotline / Zalo: <strong className="text-white">0914 066 662</strong></span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Mail className="w-4 h-4 text-indigo-400 shrink-0" />
+                <span>Email: <strong className="text-white">lienkehoach@gmail.com</strong></span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Clock className="w-4 h-4 text-indigo-400 shrink-0" />
@@ -127,40 +132,40 @@ export const Footer = () => {
             <div className="space-y-2">
               {/* Facebook */}
               <a
-                href="https://facebook.com"
+                href="https://www.facebook.com/kim.lien.ngo.304193"
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center justify-between p-2.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 rounded-xl text-xs font-semibold text-blue-300 transition group"
               >
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center font-black text-[11px]">f</span>
-                  <span>Facebook Kim Liên Medical</span>
+                  <span>Facebook Kim Liên</span>
                 </div>
                 <ExternalLink className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
               </a>
 
               {/* Zalo */}
               <a
-                href="https://zalo.me"
+                href="https://zalo.me/0914066662"
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-center justify-between p-2.5 bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-500/30 rounded-xl text-xs font-semibold text-cyan-300 transition group"
               >
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 bg-cyan-500 text-white rounded-full flex items-center justify-center font-black text-[10px]">Z</span>
-                  <span>Zalo: 0901 000 001</span>
+                  <span>Zalo: 0914 066 662</span>
                 </div>
                 <ExternalLink className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
               </a>
 
               {/* Gmail */}
               <a
-                href="mailto:kimlienmedical@gmail.com"
+                href="mailto:lienkehoach@gmail.com"
                 className="flex items-center justify-between p-2.5 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 rounded-xl text-xs font-semibold text-red-300 transition group"
               >
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-red-400" />
-                  <span>kimlienmedical@gmail.com</span>
+                  <span>lienkehoach@gmail.com</span>
                 </div>
                 <ExternalLink className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
               </a>
@@ -168,10 +173,28 @@ export const Footer = () => {
           </div>
         </div>
 
-        {/* Copyright */}
-        <div className="mt-12 pt-6 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+        {/* Copyright & Creator Credit */}
+        <div className="mt-12 pt-6 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-400">
           <p>© 2026 <strong>Thiết Bị Y Tế Kim Liên</strong>. Tất cả các quyền được bảo hộ.</p>
-          <p className="flex items-center gap-1">
+
+          {/* Designer / Developer Credit */}
+          <div className="flex items-center gap-2">
+            <span className="text-gray-400">Thiết kế & Phát triển website:</span>
+            <a
+              href="https://github.com/LeQuangDatNL"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-800 hover:bg-gray-700 text-teal-400 hover:text-teal-300 font-bold border border-gray-700 hover:border-teal-500/50 transition shadow-xs group"
+              title="Xem GitHub của người thiết kế web"
+            >
+              <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
+              <span>@LeQuangDat</span>
+            </a>
+          </div>
+
+          <p className="flex items-center gap-1 text-gray-400">
             Đồng hành cùng sức khỏe gia đình bạn <Heart className="w-3.5 h-3.5 text-red-500 inline fill-red-500" />
           </p>
         </div>

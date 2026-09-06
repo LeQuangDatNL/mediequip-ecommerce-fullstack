@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import { handleImageError, DEFAULT_NO_IMAGE } from '../../utils/imageHelper';
 
 export const ProductDetailModal = ({ isOpen, onClose, productId, initialProduct = null }) => {
   const [product, setProduct] = useState(initialProduct);
@@ -130,12 +131,10 @@ export const ProductDetailModal = ({ isOpen, onClose, productId, initialProduct 
                 <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-slate-100 border border-gray-200 group">
                   {allImages.length > 0 ? (
                     <img
-                      src={allImages[activeImageIndex] || allImages[0]}
+                      src={allImages[activeImageIndex] || allImages[0] || DEFAULT_NO_IMAGE}
                       alt={product.name}
                       className="w-full h-full object-contain p-4 bg-white transition duration-300 group-hover:scale-105"
-                      onError={(e) => {
-                        e.target.src = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600';
-                      }}
+                      onError={handleImageError}
                     />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2 bg-slate-50">
@@ -185,19 +184,17 @@ export const ProductDetailModal = ({ isOpen, onClose, productId, initialProduct 
                           key={idx}
                           type="button"
                           onClick={() => setActiveImageIndex(idx)}
-                          className={`relative w-16 h-16 rounded-xl overflow-hidden bg-white border-2 shrink-0 transition cursor-pointer ${
+                          className={`relative w-16 h-16 rounded-xl border-2 shrink-0 transition cursor-pointer bg-white ${
                             activeImageIndex === idx
                               ? 'border-indigo-600 ring-2 ring-indigo-200'
                               : 'border-gray-200 opacity-70 hover:opacity-100'
                           }`}
                         >
                           <img
-                            src={img}
+                            src={img || DEFAULT_NO_IMAGE}
                             alt={`Thumb ${idx}`}
                             className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.src = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150';
-                            }}
+                            onError={handleImageError}
                           />
                           {idx === 0 && (
                             <span className="absolute bottom-0 inset-x-0 bg-indigo-600 text-white text-[8px] font-bold text-center py-0.5">

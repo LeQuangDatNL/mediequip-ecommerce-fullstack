@@ -12,6 +12,7 @@ import {
   Package
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { handleImageError, DEFAULT_NO_IMAGE } from '../../utils/imageHelper';
 
 export const WishlistPage = () => {
   const { wishlistItems, removeFromWishlist, clearWishlist, totalWishlistCount } = useWishlist();
@@ -81,8 +82,9 @@ export const WishlistPage = () => {
             <div className="relative aspect-square overflow-hidden bg-gray-50 p-4">
               <Link to={`/products/${product.id}`} className="block w-full h-full">
                 <img
-                  src={product.primaryImageUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600'}
+                  src={product.primaryImageUrl || DEFAULT_NO_IMAGE}
                   alt={product.name}
+                  onError={handleImageError}
                   className="w-full h-full object-contain group-hover:scale-105 transition duration-300"
                 />
               </Link>

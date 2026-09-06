@@ -26,6 +26,7 @@ import {
   Award
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { handleImageError, DEFAULT_NO_IMAGE } from '../../utils/imageHelper';
 
 export const ProductDetailPage = () => {
   const { id } = useParams();
@@ -202,8 +203,9 @@ export const ProductDetailPage = () => {
           {/* Ảnh lớn chính */}
           <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 p-6 flex items-center justify-center group">
             <img
-              src={selectedImage || product.primaryImageUrl}
+              src={selectedImage || product.primaryImageUrl || DEFAULT_NO_IMAGE}
               alt={product.name}
+              onError={handleImageError}
               className="w-full h-full object-contain group-hover:scale-105 transition duration-500"
             />
             {product.category && (
@@ -236,7 +238,12 @@ export const ProductDetailPage = () => {
                     selectedImage === imgUrl ? 'border-teal-700 shadow-md scale-105' : 'border-gray-200 hover:border-teal-400'
                   }`}
                 >
-                  <img src={imgUrl} alt={`${product.name} ${idx + 1}`} className="w-full h-full object-contain" />
+                  <img
+                    src={imgUrl || DEFAULT_NO_IMAGE}
+                    alt={`${product.name} ${idx + 1}`}
+                    onError={handleImageError}
+                    className="w-full h-full object-contain"
+                  />
                 </button>
               ))}
             </div>
@@ -543,8 +550,9 @@ export const ProductDetailPage = () => {
               >
                 <div className="relative aspect-square overflow-hidden bg-gray-50 rounded-xl mb-3 flex items-center justify-center">
                   <img
-                    src={p.primaryImageUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600'}
+                    src={p.primaryImageUrl || DEFAULT_NO_IMAGE}
                     alt={p.name}
+                    onError={handleImageError}
                     className="w-full h-full object-contain group-hover:scale-105 transition"
                   />
                 </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
+import { handleImageError, DEFAULT_NO_IMAGE } from '../../utils/imageHelper';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
 import Pagination from '../../components/Pagination';
@@ -258,7 +259,8 @@ export const ProductsPage = () => {
                 <div className="relative aspect-square overflow-hidden bg-gray-50 p-4">
                   <Link to={`/products/${product.id}`} className="block w-full h-full">
                     <img
-                      src={product.primaryImageUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600'}
+                      src={product.primaryImageUrl || DEFAULT_NO_IMAGE}
+                      onError={handleImageError}
                       alt={product.name}
                       className="w-full h-full object-contain group-hover:scale-105 transition duration-300"
                     />

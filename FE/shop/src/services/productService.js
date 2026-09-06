@@ -1,9 +1,9 @@
 import apiClient from './apiClient';
 
 export const productService = {
-  // Lấy danh sách sản phẩm từ Backend (phân trang, tìm kiếm và lọc theo danh mục)
-  async getProducts(page = 0, keyword = '', categoryId = null) {
-    const params = { page };
+  // Lấy danh sách sản phẩm từ Backend (phân trang, tìm kiếm và lọc theo danh mục, mặc định 12 sản phẩm/trang)
+  async getProducts(page = 0, keyword = '', categoryId = null, size = 12) {
+    const params = { page, size };
     if (keyword && keyword.trim()) {
       params.keyword = keyword.trim();
     }

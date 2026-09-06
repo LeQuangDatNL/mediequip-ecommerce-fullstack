@@ -1,0 +1,22 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="24" fill="url(#bgGrad)"/>
+  <rect x="12" y="12" width="376" height="376" rx="16" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="8 8"/>
+  <g transform="translate(140, 110)">
+    <rect width="120" height="120" rx="24" fill="#ffffff" filter="drop-shadow(0 4px 12px rgba(0,0,0,0.06))"/>
+    <path d="M60 30 V90 M30 60 H90" stroke="url(#iconGrad)" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="60" cy="60" r="16" fill="#ffffff" stroke="url(#iconGrad)" stroke-width="4"/>
+    <path d="M54 60 L58 64 L67 55" stroke="url(#iconGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+  <text x="200" y="275" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="700" fill="#334155" text-anchor="middle">Thiết Bị Y Tế MediEquip</text>
+  <text x="200" y="300" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500" fill="#64748b" text-anchor="middle">Hình ảnh đang cập nhật</text>
+</svg>

@@ -30,10 +30,11 @@ public class ProductController {
     @GetMapping
     public Page<ProductResponse> findAll(
             @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "") String keyword,
             @RequestParam(required = false) Long categoryId
     ) {
-        return productService.findAll(page, keyword, categoryId);
+        return productService.findAll(page, size, keyword, categoryId);
     }
 
     @GetMapping("/{id}")

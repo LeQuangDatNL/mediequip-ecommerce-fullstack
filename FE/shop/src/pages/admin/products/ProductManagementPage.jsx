@@ -19,6 +19,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { handleImageError, DEFAULT_NO_IMAGE } from '../../../utils/imageHelper';
 
 export const ProductManagementPage = () => {
   // Quản lý Phân trang & Tìm kiếm có lưu trạng thái trong sessionStorage
@@ -311,8 +312,9 @@ export const ProductManagementPage = () => {
                     <td className="px-5 py-4">
                       <div className="w-12 h-12 rounded-xl bg-gray-100 overflow-hidden border border-gray-100 shrink-0">
                         <img
-                          src={prod.primaryImageUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=200'}
+                          src={prod.primaryImageUrl || DEFAULT_NO_IMAGE}
                           alt={prod.name}
+                          onError={handleImageError}
                           className="w-full h-full object-cover"
                         />
                       </div>

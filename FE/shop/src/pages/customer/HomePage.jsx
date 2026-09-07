@@ -5,6 +5,7 @@ import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
+import originService from '../../services/originService';
 import consultationService from '../../services/consultationService';
 import HeroDoctorImg from '../../assets/medical_hero_doctor.jpg';
 import MedicalDevicesImg from '../../assets/medical_devices_banner.jpg';
@@ -38,6 +39,7 @@ import {
   HeartPulse,
   Wind,
   Accessibility,
+  Globe,
   Pill,
   Headphones,
   Check,
@@ -54,6 +56,7 @@ export const HomePage = () => {
   const navigate = useNavigate();
 
   const [categories, setCategories] = useState([]);
+  const [origins, setOrigins] = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
@@ -98,13 +101,17 @@ export const HomePage = () => {
     const fetchHomeData = async () => {
       setLoading(true);
       try {
-        const [cats, prods] = await Promise.all([
+        const [cats, origs, prods] = await Promise.all([
           categoryService.getAllCategories().catch(() => []),
+          originService.getAllOrigins().catch(() => []),
           productService.getProducts(0, '').catch(() => ({ content: [] })),
         ]);
 
         const catList = Array.isArray(cats) ? cats : [];
         setCategories(catList.slice(0, 8));
+
+        const origList = Array.isArray(origs) ? origs : [];
+        setOrigins(origList);
 
         const prodList = prods.content || (Array.isArray(prods) ? prods : []);
         setBestSellers(prodList.slice(0, 8));
@@ -180,7 +187,7 @@ export const HomePage = () => {
       }
 
       await consultationService.submitConsultation(formData);
-      toast.success('Gửi yêu cầu báo giá / tư vấn thành công! Đội ngũ kỹ sư hóa học sẽ liên hệ trong 30 phút.');
+      toast.success('Gửi yêu cầu báo giá / tư vấn thành công! Đội ngũ kỹ sư y tế sẽ liên hệ trong 30 phút.');
       handleResetForm();
       setCooldown(30);
     } catch (err) {
@@ -298,7 +305,7 @@ export const HomePage = () => {
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-700 font-medium">
                 <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                <span>Giá Cả Tốt Nhất & Báo Giá 2H</span>
+                <span>Giá Cả Tốt Nhất & Báo Giá Nhanh</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-700 font-medium">
                 <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
@@ -756,6 +763,8 @@ export const HomePage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {bestSellers.map((product) => {
               const inWishlist = isInWishlist(product.id);
+              const originLabel = product.origin?.name || product.originName;
+
               return (
                 <div
                   key={product.id}
@@ -770,12 +779,20 @@ export const HomePage = () => {
                       className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                     />
                     
-                    {/* Category tag */}
-                    {product.category && (
-                      <span className="absolute top-3 left-3 bg-blue-50/90 backdrop-blur-xs text-blue-800 text-[10px] font-bold px-2.5 py-0.5 rounded-md border border-blue-200/60 shadow-2xs">
-                        {product.category.name}
-                      </span>
-                    )}
+                    {/* Category and Origin tags */}
+                    <div className="absolute top-3 left-3 flex flex-col gap-1 items-start pointer-events-none">
+                      {product.category && (
+                        <span className="bg-blue-50/90 backdrop-blur-xs text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-md border border-blue-200/60 shadow-2xs">
+                          {product.category.name}
+                        </span>
+                      )}
+                      {originLabel && (
+                        <span className="bg-teal-50/90 backdrop-blur-xs text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded-md border border-teal-200/60 shadow-2xs flex items-center gap-1">
+                          <Globe className="w-2.5 h-2.5 text-teal-600" />
+                          <span>{originLabel}</span>
+                        </span>
+                      )}
+                    </div>
 
                     {/* Wishlist toggle */}
                     <button
@@ -807,11 +824,11 @@ export const HomePage = () => {
                       </p>
                     </div>
 
-                    <div className="pt-2 flex items-center justify-between border-t border-gray-100">
+                    <div className="pt-2 flex items-center justify-between border-t border-gray-100 gap-2">
                       <div>
-                        <span className="text-[10px] text-gray-400 block font-medium">Giá niêm yết</span>
+                        <span className="text-[10px] text-gray-400 block font-medium">Báo giá dự án</span>
                         <span className="font-black text-blue-700 text-xs sm:text-sm">
-                          {formatPrice(product.price)}
+                          Liên hệ báo giá
                         </span>
                       </div>
 
@@ -827,7 +844,7 @@ export const HomePage = () => {
                           type="button"
                           onClick={() => addToCart(product)}
                           className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition shadow-xs cursor-pointer"
-                          title="Thêm vào giỏ hàng"
+                          title="Thêm vào danh sách báo giá"
                         >
                           <ShoppingBag className="w-4 h-4" />
                         </button>
@@ -840,6 +857,64 @@ export const HomePage = () => {
           </div>
         )}
       </section>
+
+      {/* ========================================================================= */}
+      {/* 4.5. KHU VỰC XUẤT XỨ & TIÊU CHUẨN QUỐC TẾ (ORIGINS HIGHLIGHTS) */}
+      {/* ========================================================================= */}
+      {origins.length > 0 && (
+        <section className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-10 text-white shadow-xl space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 border-b border-white/10 pb-4">
+            <div>
+              <span className="text-[11px] font-bold text-teal-300 uppercase tracking-wider bg-teal-500/20 px-2.5 py-0.5 rounded-md border border-teal-400/30">
+                TIÊU CHUẨN KIỂM ĐỊNH QUỐC TẾ
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight mt-1.5 text-white">
+                Xuất Xứ & Thương Hiệu Y Tế Hàng Đầu
+              </h2>
+            </div>
+            <Link
+              to="/products"
+              className="text-xs font-bold text-teal-300 hover:text-teal-200 flex items-center gap-1 hover:underline shrink-0"
+            >
+              <span>Xem tất cả xuất xứ ({origins.length} quốc gia)</span>
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {origins.map((orig) => (
+              <Link
+                key={orig.id}
+                to={`/products?originId=${orig.id}`}
+                className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-teal-400/40 rounded-2xl transition-all duration-300 group flex flex-col justify-between space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="p-2 bg-teal-500/20 text-teal-300 rounded-xl group-hover:scale-110 transition-transform">
+                    <Globe className="w-4 h-4" />
+                  </div>
+                  {orig.code && (
+                    <span className="font-mono text-xs font-bold text-gray-400 group-hover:text-teal-300">
+                      {orig.code}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-sm group-hover:text-teal-300 transition">
+                    {orig.name}
+                  </h3>
+                  <p className="text-[11px] text-gray-400 line-clamp-1 mt-0.5">
+                    {orig.description || 'Tiêu chuẩn kiểm định chính hãng'}
+                  </p>
+                </div>
+                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[10px] text-gray-400 group-hover:text-teal-300">
+                  <span>Lọc sản phẩm</span>
+                  <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ========================================================================= */}
       {/* 5. MODULE GỬI FILE YÊU CẦU BÁO GIÁ & TƯ VẤN Y TẾ TRỰC TUYẾN */}
@@ -892,7 +967,7 @@ export const HomePage = () => {
             </div>
             <h3 className="font-bold text-sm text-white">3. Báo Giá Trực Tiếp Nhanh Chóng</h3>
             <p className="text-xs text-teal-100 leading-relaxed font-light">
-              Trao đổi trực tiếp 1-1 với đội ngũ kỹ sư hóa học & kỹ thuật y sinh, hỗ trợ lập hồ sơ thầu, cung cấp hóa đơn đỏ VAT và ký hợp đồng kinh tế minh bạch, cam kết thời gian giao hàng.
+              Trao đổi trực tiếp 1-1 với đội ngũ kỹ sư thiết bị y tế & kỹ thuật y sinh, hỗ trợ lập hồ sơ thầu, cung cấp hóa đơn đỏ VAT và ký hợp đồng kinh tế minh bạch, cam kết thời gian giao hàng.
             </p>
           </div>
 

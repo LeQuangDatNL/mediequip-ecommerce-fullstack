@@ -1,6 +1,6 @@
 -- =========================================================
--- E-COMMERCE DATABASE
--- MySQL 8+
+-- E-COMMERCE DATABASE (CHUẨN HÓA BÁO GIÁ THIẾT BỊ Y TẾ)
+-- MySQL 8.0+ / utf8mb4_unicode_ci
 -- =========================================================
 
 DROP DATABASE IF EXISTS ecommerce_db;
@@ -13,7 +13,7 @@ USE ecommerce_db;
 
 
 -- =========================================================
--- 1. USERS
+-- 1. USERS (TÀI KHOẢN NGƯỜI DÙNG & QUẢN TRỊ VIÊN)
 -- =========================================================
 
 CREATE TABLE users (
@@ -24,7 +24,7 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
 
     full_name VARCHAR(100) NOT NULL,
-    phone VARCHAR(20),
+    phone VARCHAR(20) NULL,
 
     role ENUM('CUSTOMER', 'ADMIN') NOT NULL DEFAULT 'CUSTOMER',
     status ENUM('ACTIVE', 'BANNED') NOT NULL DEFAULT 'ACTIVE',
@@ -38,15 +38,15 @@ CREATE TABLE users (
 
 
 -- =========================================================
--- 2. CATEGORIES
+-- 2. ORIGINS (XUẤT XỨ / QUỐC GIA SẢN XUẤT THIẾT BỊ)
 -- =========================================================
 
-CREATE TABLE categories (
+CREATE TABLE origins (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
 
-    name VARCHAR(100) NOT NULL,
-    slug VARCHAR(150) NOT NULL UNIQUE,
-    description TEXT,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    code VARCHAR(20) NULL, -- Ví dụ: VN, JP, DE, US, KR, CH, CN, FR
+    description TEXT NULL,
 
     status ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE',
 
@@ -59,38 +59,51 @@ CREATE TABLE categories (
 
 
 -- =========================================================
--- 3. PRODUCTS
+-- 3. CATEGORIES (NHÓM DANH MỤC SẢN PHẨM)
+-- =========================================================
+
+CREATE TABLE categories (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    name VARCHAR(100) NOT NULL,
+    slug VARCHAR(150) NOT NULL UNIQUE,
+    description TEXT NULL,
+
+    status ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP
+);
+
+
+-- =========================================================
+-- 4. PRODUCTS (SẢN PHẨM / THIẾT BỊ Y TẾ)
+-- Lưu ý: Đã loại bỏ cột Giá và Tồn kho để chuyển sang mô hình Báo Giá theo dự án
 -- =========================================================
 
 CREATE TABLE products (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
 
     category_id BIGINT NOT NULL,
+    origin_id BIGINT NULL,
 
     name VARCHAR(255) NOT NULL,
-
     slug VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT NULL,
 
-    description TEXT,
-
-    -- Giá có thể chưa được cập nhật (Tạm thời để trống NULL)
-    price DECIMAL(15,2) NULL,
-
-    stock INT NOT NULL DEFAULT 0,
-
-    -- Ảnh chính của sản phẩm
     primary_image_url VARCHAR(500) NULL,
 
     status ENUM(
         'ACTIVE',
-        'INACTIVE',
-        'OUT_OF_STOCK'
+        'INACTIVE'
     ) NOT NULL DEFAULT 'ACTIVE',
 
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP,
 
@@ -100,16 +113,16 @@ CREATE TABLE products (
         ON DELETE RESTRICT
         ON UPDATE CASCADE,
 
-    CONSTRAINT chk_product_price
-        CHECK (price IS NULL OR price >= 0),
-
-    CONSTRAINT chk_product_stock
-        CHECK (stock >= 0)
+    CONSTRAINT fk_products_origin
+        FOREIGN KEY (origin_id)
+        REFERENCES origins(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
 );
 
 
 -- =========================================================
--- 4. IMAGES (THƯ VIỆN ẢNH / MEDIA GALLERY DÙNG CHUNG)
+-- 5. IMAGES (THƯ VIỆN ẢNH / MEDIA GALLERY DÙNG CHUNG)
 -- =========================================================
 
 CREATE TABLE images (
@@ -129,16 +142,14 @@ CREATE TABLE images (
 
 
 -- =========================================================
--- 5. PRODUCT IMAGES (Bộ sưu tập ảnh chi tiết theo sản phẩm)
+-- 6. PRODUCT IMAGES (BỘ SƯU TẬP ẢNH CHI TIẾT THEO SẢN PHẨM)
 -- =========================================================
 
 CREATE TABLE product_images (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
 
     product_id BIGINT NOT NULL,
-
     image_url VARCHAR(500) NOT NULL,
-
     is_primary BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -152,7 +163,7 @@ CREATE TABLE product_images (
 
 
 -- =========================================================
--- 6. ADDRESSES
+-- 7. ADDRESSES (ĐỊA CHỈ GIAO HÀNG / TRỤ SỞ)
 -- =========================================================
 
 CREATE TABLE addresses (
@@ -183,7 +194,7 @@ CREATE TABLE addresses (
 
 
 -- =========================================================
--- 7. CARTS
+-- 8. CARTS (GIỎ HÀNG / DANH SÁCH YÊU CẦU BÁO GIÁ)
 -- =========================================================
 
 CREATE TABLE carts (
@@ -204,7 +215,7 @@ CREATE TABLE carts (
 
 
 -- =========================================================
--- 8. CART ITEMS
+-- 9. CART ITEMS (MẶT HÀNG TRONG GIỎ)
 -- =========================================================
 
 CREATE TABLE cart_items (
@@ -238,7 +249,7 @@ CREATE TABLE cart_items (
 
 
 -- =========================================================
--- 9. ORDERS
+-- 10. ORDERS (ĐƠN HÀNG / BẢNG BÁO GIÁ DỰ ÁN)
 -- =========================================================
 
 CREATE TABLE orders (
@@ -274,7 +285,7 @@ CREATE TABLE orders (
         'CANCELLED'
     ) NOT NULL DEFAULT 'PENDING',
 
-    note TEXT,
+    note TEXT NULL,
 
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 
@@ -297,7 +308,7 @@ CREATE TABLE orders (
 
 
 -- =========================================================
--- 10. ORDER ITEMS
+-- 11. ORDER ITEMS (CHI TIẾT MẶT HÀNG BÁO GIÁ TRONG ĐƠN)
 -- =========================================================
 
 CREATE TABLE order_items (
@@ -306,10 +317,10 @@ CREATE TABLE order_items (
     order_id BIGINT NOT NULL,
     product_id BIGINT NOT NULL,
 
-    -- Snapshot tại thời điểm mua
+    -- Snapshot tại thời điểm duyệt báo giá
     product_name VARCHAR(255) NOT NULL,
-    price DECIMAL(15,2) NOT NULL,
-    quantity INT NOT NULL,
+    price DECIMAL(15,2) NOT NULL DEFAULT 0,
+    quantity INT NOT NULL DEFAULT 1,
 
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -334,7 +345,7 @@ CREATE TABLE order_items (
 
 
 -- =========================================================
--- 11. PAYMENTS
+-- 12. PAYMENTS (GIAO DỊCH THANH TOÁN)
 -- =========================================================
 
 CREATE TABLE payments (
@@ -342,9 +353,8 @@ CREATE TABLE payments (
 
     order_id BIGINT NOT NULL,
 
-    transaction_code VARCHAR(100) UNIQUE,
-
-    amount DECIMAL(15,2) NOT NULL,
+    transaction_code VARCHAR(100) UNIQUE NULL,
+    amount DECIMAL(15,2) NOT NULL DEFAULT 0,
 
     payment_method ENUM(
         'COD',
@@ -374,7 +384,7 @@ CREATE TABLE payments (
 
 
 -- =========================================================
--- 12. REVIEWS
+-- 13. REVIEWS (ĐÁNH GIÁ & BÌNH LUẬN SẢN PHẨM)
 -- =========================================================
 
 CREATE TABLE reviews (
@@ -385,7 +395,7 @@ CREATE TABLE reviews (
     order_id BIGINT NOT NULL,
 
     rating TINYINT NOT NULL,
-    comment TEXT,
+    comment TEXT NULL,
 
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 
@@ -414,14 +424,13 @@ CREATE TABLE reviews (
     CONSTRAINT chk_review_rating
         CHECK (rating BETWEEN 1 AND 5),
 
-    -- Một user chỉ review một sản phẩm trong một order một lần
     CONSTRAINT uq_user_product_order
         UNIQUE (user_id, product_id, order_id)
 );
 
 
 -- =========================================================
--- 13. WISHLIST
+-- 14. WISHLIST (DANH SÁCH QUAN TÂM / YÊU THÍCH)
 -- =========================================================
 
 CREATE TABLE wishlist (
@@ -450,7 +459,7 @@ CREATE TABLE wishlist (
 
 
 -- =========================================================
--- 14. CONSULTATIONS (YÊU CẦU TƯ VẤN & GỬI FILE BÁO GIÁ)
+-- 15. CONSULTATIONS (YÊU CẦU TƯ VẤN & GỬI FILE BÁO GIÁ)
 -- =========================================================
 
 CREATE TABLE consultations (
@@ -465,7 +474,7 @@ CREATE TABLE consultations (
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
 
-    -- File đính kèm (Excel, Word, PDF, Ảnh danh sách thiết bị cần mua)
+    -- File đính kèm (Excel, Word, PDF, Ảnh danh mục thiết bị cần báo giá)
     attachment_url VARCHAR(500) NULL,
     attachment_name VARCHAR(255) NULL,
     file_type VARCHAR(255) NULL,
@@ -495,77 +504,97 @@ CREATE TABLE consultations (
 
 
 -- =========================================================
--- 15. BANNERS (QUẢN LÝ HERO BANNER / SLIDER TRANG CHỦ)
+-- 16. USER REPORTS (THEO DÕI VÀ XUẤT BÁO CÁO EXCEL CỦA NGƯỜI DÙNG)
 -- =========================================================
 
-CREATE TABLE banners (
+CREATE TABLE user_reports (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
 
-    title VARCHAR(255) NOT NULL,
-    subtitle TEXT NULL,
-    badge_text VARCHAR(100) NULL,
+    user_id BIGINT NOT NULL,
 
-    image_url VARCHAR(500) NOT NULL,
+    report_type VARCHAR(50) NOT NULL,
+    status ENUM('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED') NOT NULL DEFAULT 'PENDING',
 
-    button_text VARCHAR(100) NULL DEFAULT 'Mua Ngay',
-    button_link VARCHAR(255) NULL DEFAULT '/products',
+    file_name VARCHAR(255) NULL,
+    file_path VARCHAR(500) NULL,
+    file_size BIGINT NULL,
+    download_url VARCHAR(500) NULL,
+    error_message TEXT NULL,
 
-    secondary_button_text VARCHAR(100) NULL DEFAULT 'Gửi File Báo Giá',
-    secondary_button_link VARCHAR(255) NULL DEFAULT '/consultation',
-
-    display_order INT NOT NULL DEFAULT 0,
-
-    status ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE',
+    requested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP NULL,
 
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
 
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP
+    CONSTRAINT fk_user_reports_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 
 -- =========================================================
--- INDEX
+-- INDEX TỐI ƯU HIỆU NĂNG QUERY VÀ TÌM KIẾM
 -- =========================================================
 
+-- Origins
+CREATE INDEX idx_origins_code ON origins(code);
+CREATE INDEX idx_origins_status ON origins(status);
+CREATE INDEX idx_origins_is_deleted ON origins(is_deleted);
+
+-- Categories
+CREATE INDEX idx_categories_slug ON categories(slug);
+CREATE INDEX idx_categories_status ON categories(status);
+CREATE INDEX idx_categories_is_deleted ON categories(is_deleted);
+
+-- Products
 CREATE INDEX idx_products_category ON products(category_id);
+CREATE INDEX idx_products_origin ON products(origin_id);
+CREATE INDEX idx_products_slug ON products(slug);
 CREATE INDEX idx_products_status ON products(status);
 CREATE INDEX idx_products_is_deleted ON products(is_deleted);
-CREATE INDEX idx_categories_is_deleted ON categories(is_deleted);
+CREATE INDEX idx_products_created_at ON products(created_at);
+
+-- Users
+CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_status ON users(status);
 CREATE INDEX idx_users_is_deleted ON users(is_deleted);
+
+-- Images
 CREATE INDEX idx_images_is_deleted ON images(is_deleted);
 CREATE INDEX idx_product_images_product ON product_images(product_id);
+
+-- Addresses & Carts
 CREATE INDEX idx_addresses_user ON addresses(user_id);
 CREATE INDEX idx_cart_items_cart ON cart_items(cart_id);
+
+-- Orders & Payments
 CREATE INDEX idx_orders_user ON orders(user_id);
 CREATE INDEX idx_orders_status ON orders(order_status);
 CREATE INDEX idx_orders_is_deleted ON orders(is_deleted);
 CREATE INDEX idx_orders_created_at ON orders(created_at);
 CREATE INDEX idx_order_items_order ON order_items(order_id);
+CREATE INDEX idx_payments_order ON payments(order_id);
+
+-- Reviews & Wishlist
 CREATE INDEX idx_reviews_product ON reviews(product_id);
+CREATE INDEX idx_reviews_user ON reviews(user_id);
+CREATE INDEX idx_reviews_is_deleted ON reviews(is_deleted);
 CREATE INDEX idx_wishlist_user ON wishlist(user_id);
+
+-- Consultations & User Reports
+CREATE INDEX idx_consultations_user ON consultations(user_id);
 CREATE INDEX idx_consultations_status ON consultations(status);
 CREATE INDEX idx_consultations_is_deleted ON consultations(is_deleted);
 CREATE INDEX idx_consultations_created_at ON consultations(created_at);
-CREATE INDEX idx_banners_status ON banners(status);
-CREATE INDEX idx_banners_is_deleted ON banners(is_deleted);
-CREATE INDEX idx_banners_display_order ON banners(display_order);
+CREATE INDEX idx_user_reports_user ON user_reports(user_id);
+CREATE INDEX idx_user_reports_status ON user_reports(status);
+CREATE INDEX idx_user_reports_is_deleted ON user_reports(is_deleted);
 
 
 -- =========================================================
--- 16. XÓA MỀM (SOFT DELETE) VỚI CỘT IS_DELETED
--- =========================================================
--- 1. Categories: UPDATE categories SET is_deleted = TRUE, status = 'INACTIVE' WHERE id = ?;
--- 2. Products: UPDATE products SET is_deleted = TRUE, status = 'INACTIVE' WHERE id = ?;
--- 3. Users: UPDATE users SET is_deleted = TRUE, status = 'BANNED' WHERE id = ?;
--- 4. Orders: UPDATE orders SET is_deleted = TRUE, order_status = 'CANCELLED' WHERE id = ?;
--- 5. Images: UPDATE images SET is_deleted = TRUE WHERE id = ?;
--- 6. Consultations: UPDATE consultations SET is_deleted = TRUE WHERE id = ?;
--- 7. Banners: UPDATE banners SET is_deleted = TRUE, status = 'INACTIVE' WHERE id = ?;
-
--- =========================================================
--- KIỂM TRA
+-- KIỂM TRA TOÀN BỘ DANH SÁCH BẢNG
 -- =========================================================
 
 SHOW TABLES;

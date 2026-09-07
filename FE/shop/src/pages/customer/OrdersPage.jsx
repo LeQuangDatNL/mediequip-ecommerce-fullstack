@@ -728,3 +728,4 @@ export const OrdersPage = () => {
 };
 
 export default OrdersPage;
+

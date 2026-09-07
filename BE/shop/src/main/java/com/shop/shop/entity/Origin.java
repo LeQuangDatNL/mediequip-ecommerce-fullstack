@@ -4,44 +4,30 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "products")
-public class Product {
+@Table(name = "origins")
+public class Origin {
     public enum Status { ACTIVE, INACTIVE }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "category_id", nullable = false)
-    private Category category;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "origin_id")
-    private Origin origin;
-
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, unique = true, length = 100)
     private String name;
 
-    @Column(nullable = false, unique = true, length = 255)
-    private String slug;
+    @Column(length = 20)
+    private String code;
 
     @Column(columnDefinition = "TEXT")
     private String description;
-
-    @Column(name = "primary_image_url", length = 500)
-    private String primaryImageUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -56,27 +42,22 @@ public class Product {
     @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
 
-    public Product() {}
+    public Origin() {}
 
     public Long getId() { return id; }
-    public Category getCategory() { return category; }
-    public Origin getOrigin() { return origin; }
     public String getName() { return name; }
-    public String getSlug() { return slug; }
+    public String getCode() { return code; }
     public String getDescription() { return description; }
-    public String getPrimaryImageUrl() { return primaryImageUrl; }
     public Status getStatus() { return status; }
     public Boolean getIsDeleted() { return isDeleted; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 
     public void setId(Long id) { this.id = id; }
-    public void setCategory(Category category) { this.category = category; }
-    public void setOrigin(Origin origin) { this.origin = origin; }
     public void setName(String name) { this.name = name; }
-    public void setSlug(String slug) { this.slug = slug; }
+    public void setCode(String code) { this.code = code; }
     public void setDescription(String description) { this.description = description; }
-    public void setPrimaryImageUrl(String primaryImageUrl) { this.primaryImageUrl = primaryImageUrl; }
     public void setStatus(Status status) { this.status = status; }
     public void setIsDeleted(Boolean isDeleted) { this.isDeleted = isDeleted; }
 }
+

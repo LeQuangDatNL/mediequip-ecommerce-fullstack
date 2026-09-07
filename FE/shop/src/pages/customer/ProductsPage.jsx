@@ -5,6 +5,7 @@ import { useWishlist } from '../../contexts/WishlistContext';
 import { handleImageError, DEFAULT_NO_IMAGE } from '../../utils/imageHelper';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
+import originService from '../../services/originService';
 import Pagination from '../../components/Pagination';
 import SearchBar from '../../components/SearchBar';
 import {
@@ -16,7 +17,9 @@ import {
   Star,
   PackageX,
   SlidersHorizontal,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Globe,
+  FileText
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -24,10 +27,12 @@ export const ProductsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlKeyword = searchParams.get('keyword') || '';
   const urlCategoryId = searchParams.get('categoryId') ? Number(searchParams.get('categoryId')) : null;
+  const urlOriginId = searchParams.get('originId') ? Number(searchParams.get('originId')) : null;
 
   const [page, setPage] = useState(0);
   const [keyword, setKeyword] = useState(urlKeyword);
   const [selectedCategoryId, setSelectedCategoryId] = useState(urlCategoryId);
+  const [selectedOriginId, setSelectedOriginId] = useState(urlOriginId);
 
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -36,30 +41,38 @@ export const ProductsPage = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [categories, setCategories] = useState([]);
+  const [origins, setOrigins] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Tải danh mục khi mount
+  // Tải danh mục và xuất xứ khi mount
   useEffect(() => {
-    categoryService
-      .getAllCategories()
-      .then((data) => setCategories(data || []))
-      .catch((err) => console.warn('Lỗi tải danh mục:', err));
+    Promise.all([
+      categoryService.getAllCategories(),
+      originService.getAllOrigins()
+    ])
+      .then(([cats, origs]) => {
+        setCategories(cats || []);
+        setOrigins(origs || []);
+      })
+      .catch((err) => console.warn('Lỗi tải danh mục/xuất xứ:', err));
   }, []);
 
   // Cập nhật khi URL đổi
   useEffect(() => {
     const k = searchParams.get('keyword') || '';
     const c = searchParams.get('categoryId') ? Number(searchParams.get('categoryId')) : null;
+    const o = searchParams.get('originId') ? Number(searchParams.get('originId')) : null;
     setKeyword(k);
     setSelectedCategoryId(c);
+    setSelectedOriginId(o);
   }, [searchParams]);
 
-  // Tải sản phẩm theo page, keyword và categoryId
+  // Tải sản phẩm theo page, keyword, categoryId và originId
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const response = await productService.getProducts(page, keyword, selectedCategoryId);
+        const response = await productService.getProducts(page, keyword, selectedCategoryId, selectedOriginId);
         if (response && response.content) {
           setProducts(response.content);
           setTotalPages(response.totalPages || 0);
@@ -81,80 +94,97 @@ export const ProductsPage = () => {
     };
 
     fetchProducts();
-  }, [page, keyword, selectedCategoryId]);
-
-  const formatPrice = (price) => {
-    if (price === null || price === undefined) return 'Liên hệ báo giá';
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-  };
+  }, [page, keyword, selectedCategoryId, selectedOriginId]);
 
   const handleSearch = (newKeyword) => {
     setPage(0);
     setKeyword(newKeyword);
-    const params = {};
-    if (newKeyword.trim()) params.keyword = newKeyword.trim();
-    if (selectedCategoryId) params.categoryId = selectedCategoryId;
-    setSearchParams(params);
+    updateSearchParams(newKeyword, selectedCategoryId, selectedOriginId);
   };
 
   const handleCategorySelect = (catId) => {
     setPage(0);
-    if (selectedCategoryId === catId) {
-      setSelectedCategoryId(null);
-      const params = {};
-      if (keyword) params.keyword = keyword;
-      setSearchParams(params);
-    } else {
-      setSelectedCategoryId(catId);
-      const params = {};
-      if (keyword) params.keyword = keyword;
-      if (catId) params.categoryId = catId;
-      setSearchParams(params);
-    }
+    setSelectedCategoryId(catId);
+    updateSearchParams(keyword, catId, selectedOriginId);
+  };
+
+  const handleOriginSelect = (origId) => {
+    setPage(0);
+    setSelectedOriginId(origId);
+    updateSearchParams(keyword, selectedCategoryId, origId);
+  };
+
+  const updateSearchParams = (k, c, o) => {
+    const params = {};
+    if (k && k.trim()) params.keyword = k.trim();
+    if (c) params.categoryId = c;
+    if (o) params.originId = o;
+    setSearchParams(params);
   };
 
   const handleReset = () => {
     setPage(0);
     setKeyword('');
     setSelectedCategoryId(null);
+    setSelectedOriginId(null);
     setSearchParams({});
   };
 
   const selectedCategoryObj = categories.find((c) => c.id === selectedCategoryId);
+  const selectedOriginObj = origins.find((o) => o.id === selectedOriginId);
 
   return (
-    <div className="space-y-8">
-      {/* Header & Bộ lọc tìm kiếm */}
-      <div className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-xs space-y-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-5">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-300">
+      {/* Header Banner Báo Giá Thiết Bị */}
+      <div className="bg-gradient-to-r from-teal-900 via-teal-800 to-cyan-900 rounded-3xl p-6 sm:p-10 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+        <div className="space-y-3 z-10 max-w-2xl">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-teal-200 text-xs font-semibold backdrop-blur-md">
+            <Package className="w-3.5 h-3.5" />
+            <span>Phân Phối Thiết Bị Y Tế & Báo Giá Trực Tiếp</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight">
+            Danh Mục Thiết Bị Y Tế & Vật Tư
+          </h1>
+          <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed">
+            Hàng chính hãng 100% nhập khẩu từ Nhật Bản, Đức, Mỹ, Thụy Sĩ, Hàn Quốc. Cung cấp hóa đơn VAT, chứng nhận CO/CQ và hỗ trợ gửi bảng báo giá dự án nhanh chóng.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 z-10 w-full md:w-auto shrink-0">
+          <Link
+            to="/consultation"
+            className="px-5 py-3 bg-white hover:bg-teal-50 text-teal-900 rounded-2xl text-xs sm:text-sm font-bold shadow-lg transition flex items-center justify-center gap-2"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-teal-700" />
+            <span>Gửi File Yêu Cầu Báo Giá</span>
+          </Link>
+        </div>
+
+        {/* Decorative background shape */}
+        <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      </div>
+
+      {/* Filter & Search Bar */}
+      <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-xs space-y-5">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-teal-50 text-teal-700 rounded-xl">
-                <Package className="w-6 h-6" />
-              </div>
-              <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
-                Kho Thiết Bị Y Tế MediEquip Kim Liên
-              </h1>
-            </div>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1">
-              Khám phá danh mục thiết bị chính hãng đạt chứng nhận kiểm định CO/CQ.
-            </p>
+            <h2 className="text-base font-bold text-gray-900">Bộ Lọc & Tìm Kiếm Thiết Bị</h2>
+            <p className="text-xs text-gray-500">Tìm kiếm theo tên sản phẩm, danh mục, xuất xứ quốc gia</p>
           </div>
 
-          {/* SearchBar */}
           <div className="flex items-center gap-2 w-full md:w-auto">
             <SearchBar
               value={keyword}
               onSearch={handleSearch}
-              placeholder="Tìm theo tên máy, model, mã hiệu..."
+              placeholder="Nhập tên máy đo, model, thương hiệu..."
               className="w-full md:w-80"
             />
-            {(keyword || selectedCategoryId) && (
+            {(keyword || selectedCategoryId || selectedOriginId) && (
               <button
                 type="button"
                 onClick={handleReset}
                 className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl transition cursor-pointer shrink-0"
-                title="Đặt lại bộ lọc"
+                title="Đặt lại toàn bộ bộ lọc"
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
@@ -162,11 +192,11 @@ export const ProductsPage = () => {
           </div>
         </div>
 
-        {/* Categories Wrap */}
-        <div className="space-y-2.5">
+        {/* Categories Filter Wrap */}
+        <div className="space-y-2.5 pt-2 border-t border-gray-100">
           <div className="flex items-center gap-2 text-xs font-bold text-gray-700">
             <SlidersHorizontal className="w-3.5 h-3.5 text-teal-700" />
-            <span>Lọc theo nhóm danh mục ({categories.length}):</span>
+            <span>Theo nhóm danh mục ({categories.length}):</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -179,7 +209,7 @@ export const ProductsPage = () => {
                   : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
               }`}
             >
-              Tất cả ({totalElements})
+              Tất cả danh mục
             </button>
             {categories.map((cat) => (
               <button
@@ -197,16 +227,60 @@ export const ProductsPage = () => {
             ))}
           </div>
         </div>
+
+        {/* Origins Filter Wrap (Xuất xứ / Quốc gia) */}
+        {origins.length > 0 && (
+          <div className="space-y-2.5 pt-2 border-t border-gray-100">
+            <div className="flex items-center gap-2 text-xs font-bold text-gray-700">
+              <Globe className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Theo xuất xứ / Quốc gia ({origins.length}):</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleOriginSelect(null)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition border cursor-pointer ${
+                  selectedOriginId === null
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                    : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                Tất cả xuất xứ
+              </button>
+              {origins.map((orig) => (
+                <button
+                  key={orig.id}
+                  type="button"
+                  onClick={() => handleOriginSelect(orig.id)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition border cursor-pointer flex items-center gap-1 ${
+                    selectedOriginId === orig.id
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                      : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-indigo-400 hover:text-indigo-600 hover:bg-white'
+                  }`}
+                >
+                  <span>{orig.name}</span>
+                  {orig.code && <span className="text-[10px] opacity-75 font-mono">({orig.code})</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Thông báo bộ lọc đang áp dụng */}
-      {(keyword || selectedCategoryObj) && (
+      {(keyword || selectedCategoryObj || selectedOriginObj) && (
         <div className="flex items-center justify-between bg-teal-50/80 border border-teal-200 px-5 py-3 rounded-xl text-xs text-teal-950 shadow-2xs">
           <span>
             Đang lọc theo:{' '}
             {selectedCategoryObj && (
               <strong className="text-teal-800 font-bold mr-2">
                 [Danh mục: {selectedCategoryObj.name}]
+              </strong>
+            )}
+            {selectedOriginObj && (
+              <strong className="text-indigo-800 font-bold mr-2">
+                [Xuất xứ: {selectedOriginObj.name}]
               </strong>
             )}
             {keyword && (
@@ -230,14 +304,14 @@ export const ProductsPage = () => {
       {loading ? (
         <div className="py-20 flex flex-col items-center justify-center space-y-3">
           <div className="w-9 h-9 border-4 border-teal-200 border-t-teal-700 rounded-full animate-spin"></div>
-          <p className="text-xs text-gray-500 font-medium">Đang tải sản phẩm từ MediEquip Kim Liên...</p>
+          <p className="text-xs text-gray-500 font-medium">Đang tải danh sách thiết bị y tế...</p>
         </div>
       ) : products.length === 0 ? (
         <div className="py-16 bg-white rounded-2xl border border-gray-200 text-center space-y-4 shadow-xs">
           <PackageX className="w-12 h-12 text-gray-300 mx-auto" />
           <p className="text-base font-bold text-gray-800">Không tìm thấy sản phẩm nào phù hợp</p>
           <p className="text-xs text-gray-400 max-w-sm mx-auto">
-            Không có mặt hàng nào khớp với tiêu chí tìm kiếm. Hãy thử tìm từ khóa khác hoặc xóa bộ lọc.
+            Không có mặt hàng nào khớp với tiêu chí tìm kiếm. Hãy thử chọn xuất xứ khác hoặc xóa bộ lọc.
           </p>
           <button
             type="button"
@@ -251,6 +325,8 @@ export const ProductsPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {products.map((product) => {
             const inWishlist = isInWishlist(product.id);
+            const originLabel = product.origin?.name || product.originName;
+
             return (
               <div
                 key={product.id}
@@ -265,11 +341,21 @@ export const ProductsPage = () => {
                       className="w-full h-full object-contain group-hover:scale-105 transition duration-300"
                     />
                   </Link>
-                  {product.category && (
-                    <span className="absolute top-3 left-3 bg-teal-50 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded border border-teal-200 pointer-events-none">
-                      {product.category.name}
-                    </span>
-                  )}
+
+                  {/* Badges Top Left: Category & Origin */}
+                  <div className="absolute top-3 left-3 flex flex-col gap-1 items-start pointer-events-none">
+                    {product.category && (
+                      <span className="bg-teal-50/95 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded border border-teal-200 shadow-2xs">
+                        {product.category.name}
+                      </span>
+                    )}
+                    {originLabel && (
+                      <span className="bg-indigo-50/95 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded border border-indigo-200 shadow-2xs flex items-center gap-1">
+                        <Globe className="w-2.5 h-2.5 text-indigo-600" />
+                        <span>{originLabel}</span>
+                      </span>
+                    )}
+                  </div>
 
                   {/* Wishlist Button */}
                   <button
@@ -306,23 +392,26 @@ export const ProductsPage = () => {
                       </h3>
                     </Link>
                     <p className="text-[11px] text-gray-500 line-clamp-1 mt-1">
-                      {product.description || 'Thiết bị y tế chính hãng CO/CQ.'}
+                      {product.description || 'Thiết bị y tế chính hãng đạt chuẩn kiểm định CO/CQ.'}
                     </p>
                   </div>
 
-                  <div className="pt-2 flex items-center justify-between border-t border-gray-100">
-                    <span className="font-bold text-teal-800 text-xs sm:text-sm">
-                      {formatPrice(product.price)}
-                    </span>
+                  <div className="pt-2 flex items-center justify-between border-t border-gray-100 gap-2">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-gray-400 font-medium">Báo giá dự án:</span>
+                      <span className="font-bold text-teal-800 text-xs sm:text-sm">
+                        Liên hệ báo giá
+                      </span>
+                    </div>
 
                     <button
                       type="button"
                       onClick={() => addToCart(product)}
-                      className="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg transition shadow-xs flex items-center gap-1 cursor-pointer"
-                      title="Thêm vào giỏ hàng"
+                      className="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg transition shadow-xs flex items-center gap-1 cursor-pointer shrink-0"
+                      title="Thêm vào danh sách yêu cầu báo giá"
                     >
                       <ShoppingBag className="w-3.5 h-3.5" />
-                      <span>Mua</span>
+                      <span>Chọn báo giá</span>
                     </button>
                   </div>
                 </div>

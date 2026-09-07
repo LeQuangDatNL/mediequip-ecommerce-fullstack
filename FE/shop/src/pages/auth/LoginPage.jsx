@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import authService from '../../services/authService';
-import { LogIn, Lock, User, ArrowRight, Eye, EyeOff, ShieldAlert, RotateCcw, AlertTriangle } from 'lucide-react';
+import { LogIn, Lock, User, ArrowRight, Eye, EyeOff, ShieldAlert, RotateCcw, AlertTriangle, Stethoscope } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const LoginPage = () => {
@@ -130,18 +130,18 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 select-none">
       <div className="max-w-md w-full space-y-6">
         {/* Header */}
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-600 text-white font-black text-2xl shadow-lg shadow-indigo-200 mb-3">
-            S
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-800 to-emerald-600 text-white shadow-lg shadow-teal-700/20 mb-3">
+            <Stethoscope className="w-7 h-7 text-emerald-100" />
           </div>
-          <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-            Đăng nhập hệ thống
+          <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+            Đăng Nhập Hệ Thống
           </h2>
           <p className="mt-1 text-xs text-gray-500">
-            Truy cập tài khoản E-Store của bạn
+            MediEquip Vietnam • Thiết Bị Y Tế Kim Liên (7/54 Dương Thiệu Tước)
           </p>
         </div>
 
@@ -180,7 +180,7 @@ export const LoginPage = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Nhập tên đăng nhập của bạn"
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-200 focus:border-teal-600 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -192,7 +192,7 @@ export const LoginPage = () => {
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                  <Lock className="w-4 h-4" />
+                  <Lock className="w-4 h-4 text-teal-700" />
                 </div>
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -201,12 +201,12 @@ export const LoginPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Nhập mật khẩu"
-                  className="w-full pl-10 pr-11 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full pl-10 pr-11 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-200 focus:border-teal-600 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-teal-700 cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -257,7 +257,7 @@ export const LoginPage = () => {
             <button
               type="submit"
               disabled={loading || isLocked}
-              className="w-full mt-2 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm shadow-md shadow-indigo-200 transition flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
+              className="w-full mt-2 py-3 px-4 bg-gradient-to-r from-teal-800 to-emerald-700 hover:from-teal-900 hover:to-emerald-800 text-white font-bold rounded-2xl text-xs sm:text-sm shadow-md shadow-teal-900/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -276,7 +276,7 @@ export const LoginPage = () => {
               Chưa có tài khoản?{' '}
               <Link
                 to="/register"
-                className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline inline-flex items-center gap-0.5"
+                className="font-bold text-teal-700 hover:text-teal-900 hover:underline inline-flex items-center gap-0.5"
               >
                 Đăng ký ngay <ArrowRight className="w-3 h-3" />
               </Link>

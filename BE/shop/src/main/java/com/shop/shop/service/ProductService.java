@@ -3,9 +3,11 @@ package com.shop.shop.service;
 import com.shop.shop.dto.request.ProductRequest;
 import com.shop.shop.dto.response.ProductResponse;
 import com.shop.shop.entity.Category;
+import com.shop.shop.entity.Origin;
 import com.shop.shop.entity.Product;
 import com.shop.shop.entity.ProductImage;
 import com.shop.shop.repository.CategoryRepository;
+import com.shop.shop.repository.OriginRepository;
 import com.shop.shop.repository.ProductImageRepository;
 import com.shop.shop.repository.ProductRepository;
 import com.shop.shop.repository.ReviewRepository;
@@ -19,51 +21,68 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final OriginRepository originRepository;
     private final ProductImageRepository productImageRepository;
     private final ReviewRepository reviewRepository;
 
     public ProductService(
             ProductRepository productRepository,
             CategoryRepository categoryRepository,
+            OriginRepository originRepository,
             ProductImageRepository productImageRepository,
             ReviewRepository reviewRepository
     ) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
+        this.originRepository = originRepository;
         this.productImageRepository = productImageRepository;
         this.reviewRepository = reviewRepository;
     }
 
-    // Phân trang và tìm kiếm sản phẩm theo keyword và categoryId (chỉ lấy is_deleted = false)
+    // Phân trang và tìm kiếm sản phẩm theo keyword, categoryId và originId
     @Transactional(readOnly = true)
-    public Page<ProductResponse> findAll(int page, int size, String keyword, Long categoryId) {
+    public Page<ProductResponse> findAll(int page, int size, String keyword, Long categoryId, Long originId) {
         if (page < 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page must not be negative");
         int pageSize = size > 0 ? size : 12;
         PageRequest request = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "id"));
         String search = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();
-        return productRepository.searchProducts(categoryId, search, request)
+        return productRepository.searchProducts(categoryId, originId, search, request)
                 .map(this::mapToResponse);
     }
 
     @Transactional(readOnly = true)
+    public Page<ProductResponse> findAll(int page, String keyword, Long categoryId, Long originId) {
+        return findAll(page, 12, keyword, categoryId, originId);
+    }
+
+    @Transactional(readOnly = true)
     public Page<ProductResponse> findAll(int page, String keyword, Long categoryId) {
-        return findAll(page, 12, keyword, categoryId);
+        return findAll(page, 12, keyword, categoryId, null);
     }
 
     @Transactional(readOnly = true)
     public Page<ProductResponse> findAll(int page, String keyword) {
-        return findAll(page, 12, keyword, null);
+        return findAll(page, 12, keyword, null, null);
     }
 
     @Transactional(readOnly = true)
     public ProductResponse findById(Long id) {
         Product product = findProduct(id);
+        return mapToResponse(product);
+    }
+
+    @Transactional(readOnly = true)
+    public ProductResponse findBySlug(String slug) {
+        if (slug == null || slug.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Slug không hợp lệ");
+        }
+        Product product = productRepository.findBySlugAndIsDeletedFalse(slug.trim())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm có đường dẫn: " + slug));
         return mapToResponse(product);
     }
 
@@ -146,26 +165,25 @@ public class ProductService {
         Category category = categoryRepository.findActiveById(request.categoryId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không tìm thấy danh mục được chọn"));
         product.setCategory(category);
+
+        if (request.originId() != null) {
+            Origin origin = originRepository.findActiveById(request.originId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không tìm thấy xuất xứ/quốc gia được chọn"));
+            product.setOrigin(origin);
+        } else {
+            product.setOrigin(null);
+        }
+
         product.setName(request.name().trim());
         product.setSlug(request.slug().trim());
         product.setDescription(request.description() != null ? request.description().trim() : null);
-        product.setPrice(request.price());
-        product.setStock(request.stock() != null ? request.stock() : 0);
         product.setPrimaryImageUrl(request.primaryImageUrl() != null ? request.primaryImageUrl().trim() : null);
         product.setStatus(request.status() == null ? Product.Status.ACTIVE : request.status());
     }
 
     private void validate(ProductRequest request, Long id) {
-        if (request == null || request.categoryId() == null || blank(request.name()) || blank(request.slug()) || request.stock() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Dữ liệu sản phẩm không hợp lệ (Vui lòng kiểm tra tên, danh mục, tồn kho)");
-        }
-        if (request.stock() < 0 || request.stock() > 100000) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Số lượng tồn kho phải từ 0 đến 100,000 sản phẩm (giới hạn chống spam)");
-        }
-        if (request.price() != null) {
-            if (request.price().signum() < 0 || request.price().compareTo(new java.math.BigDecimal("10000000000")) > 0) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Giá sản phẩm phải từ 0 đến 10 tỷ VNĐ");
-            }
+        if (request == null || request.categoryId() == null || blank(request.name()) || blank(request.slug())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Dữ liệu sản phẩm không hợp lệ (Vui lòng kiểm tra tên, slug, danh mục)");
         }
         String slug = request.slug().trim();
         if ((id == null && productRepository.existsBySlugAndIsDeletedFalse(slug))

@@ -23,7 +23,11 @@ import {
   Clock,
   ArrowLeft,
   Share2,
-  Award
+  Award,
+  Globe,
+  FileSpreadsheet,
+  Building2,
+  FileText
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { handleImageError, DEFAULT_NO_IMAGE } from '../../utils/imageHelper';
@@ -99,11 +103,6 @@ export const ProductDetailPage = () => {
     fetchReviews();
   }, [id]);
 
-  const formatPrice = (price) => {
-    if (price === null || price === undefined) return 'Liên hệ báo giá';
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-  };
-
   const handleAddToCart = () => {
     if (!product) return;
     for (let i = 0; i < quantity; i++) {
@@ -119,29 +118,28 @@ export const ProductDetailPage = () => {
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!isAuthenticated) {
-      toast.error('Vui lòng đăng nhập tài khoản để gửi bình luận đánh giá!');
+      toast.error('Vui lòng đăng nhập để gửi đánh giá sản phẩm');
       navigate('/login');
       return;
     }
     if (!reviewComment.trim()) {
-      toast.error('Vui lòng nhập nội dung đánh giá của bạn!');
+      toast.error('Vui lòng nhập nội dung đánh giá');
       return;
     }
 
     setSubmittingReview(true);
     try {
-      await reviewService.submitReview(id, {
-        userId: user.id,
+      await reviewService.createReview(id, {
         rating: reviewRating,
         comment: reviewComment.trim(),
       });
-      toast.success('Gửi đánh giá thành công! Cảm ơn ý kiến đóng góp của bạn. ⭐');
+      toast.success('Đã gửi đánh giá thành công! Cảm ơn bạn đã phản hồi.');
       setReviewComment('');
       setReviewRating(5);
       fetchReviews();
     } catch (err) {
-      console.error('Lỗi gửi đánh giá:', err);
-      toast.error('Không thể gửi đánh giá: ' + (err.response?.data?.message || err.message));
+      const msg = err.response?.data?.message || 'Không thể gửi đánh giá lúc này';
+      toast.error(msg);
     } finally {
       setSubmittingReview(false);
     }
@@ -149,24 +147,24 @@ export const ProductDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="py-24 flex flex-col items-center justify-center space-y-3">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center justify-center space-y-4">
         <div className="w-10 h-10 border-4 border-teal-200 border-t-teal-700 rounded-full animate-spin"></div>
-        <p className="text-xs text-gray-500 font-medium">Đang tải thông tin chi tiết sản phẩm...</p>
+        <p className="text-xs text-gray-500 font-medium">Đang tải thông tin chi tiết thiết bị...</p>
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div className="py-20 text-center space-y-4 bg-white rounded-3xl border border-gray-200 p-8 max-w-xl mx-auto">
-        <h2 className="text-lg font-bold text-gray-800">Không tìm thấy sản phẩm</h2>
-        <p className="text-xs text-gray-400">Sản phẩm này có thể đã ngừng kinh doanh hoặc không tồn tại.</p>
+      <div className="max-w-4xl mx-auto px-4 py-20 text-center space-y-4">
+        <h2 className="text-xl font-bold text-gray-800">Không tìm thấy thiết bị</h2>
+        <p className="text-xs text-gray-500">Mặt hàng này có thể đã tạm ngừng kinh doanh hoặc không tồn tại.</p>
         <Link
           to="/products"
-          className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-teal-700 text-white rounded-xl text-xs font-bold shadow-xs"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Quay lại danh sách sản phẩm</span>
+          <span>Quay lại Danh sách Sản phẩm</span>
         </Link>
       </div>
     );
@@ -175,28 +173,30 @@ export const ProductDetailPage = () => {
   const inWishlist = isInWishlist(product.id);
   const imagesList = product.images && product.images.length > 0
     ? product.images
-    : [product.primaryImageUrl || 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600'];
+    : (product.primaryImageUrl ? [product.primaryImageUrl] : []);
+  const originName = product.origin?.name || product.originName;
+  const originCode = product.origin?.code || product.originCode;
 
   return (
-    <div className="space-y-12 max-w-6xl mx-auto">
-      {/* Breadcrumbs */}
-      <nav className="flex items-center gap-2 text-xs text-gray-500">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10 animate-in fade-in duration-300">
+      {/* Breadcrumb Navigation */}
+      <nav className="flex items-center gap-2 text-xs text-gray-500 overflow-x-auto whitespace-nowrap">
         <Link to="/" className="hover:text-teal-700 transition">Trang chủ</Link>
-        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-        <Link to="/products" className="hover:text-teal-700 transition">Sản phẩm</Link>
+        <ChevronRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+        <Link to="/products" className="hover:text-teal-700 transition">Sản phẩm y tế</Link>
         {product.category && (
           <>
-            <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-            <Link to={`/products?categoryId=${product.categoryId}`} className="hover:text-teal-700 transition">
+            <ChevronRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            <Link to={`/products?categoryId=${product.category.id}`} className="hover:text-teal-700 transition">
               {product.category.name}
             </Link>
           </>
         )}
-        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-        <span className="text-gray-900 font-bold truncate max-w-xs">{product.name}</span>
+        <ChevronRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+        <span className="font-semibold text-gray-900 truncate max-w-xs sm:max-w-md">{product.name}</span>
       </nav>
 
-      {/* 1. KHU VỰC CHI TIẾT SẢN PHẨM & GALLERY NHIỀU ẢNH */}
+      {/* 1. KHU VỰC CHI TIẾT SẢN PHẨM & BÁO GIÁ */}
       <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-10 shadow-xs grid grid-cols-1 lg:grid-cols-2 gap-10">
         {/* Cột trái: Gallery nhiều ảnh */}
         <div className="space-y-4">
@@ -208,11 +208,21 @@ export const ProductDetailPage = () => {
               onError={handleImageError}
               className="w-full h-full object-contain group-hover:scale-105 transition duration-500"
             />
-            {product.category && (
-              <span className="absolute top-4 left-4 bg-teal-50 text-teal-800 text-xs font-bold px-3 py-1 rounded-full border border-teal-200 shadow-2xs">
-                {product.category.name}
-              </span>
-            )}
+
+            {/* Badges */}
+            <div className="absolute top-4 left-4 flex flex-col gap-1.5 items-start pointer-events-none">
+              {product.category && (
+                <span className="bg-teal-50/95 text-teal-800 text-xs font-bold px-3 py-1 rounded-full border border-teal-200 shadow-2xs">
+                  {product.category.name}
+                </span>
+              )}
+              {originName && (
+                <span className="bg-indigo-50/95 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full border border-indigo-200 shadow-2xs flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Xuất xứ: {originName} {originCode ? `(${originCode})` : ''}</span>
+                </span>
+              )}
+            </div>
 
             <button
               type="button"
@@ -250,7 +260,7 @@ export const ProductDetailPage = () => {
           )}
         </div>
 
-        {/* Cột phải: Thông tin, Giá & Nút Thao Tác */}
+        {/* Cột phải: Thông tin, Báo giá & Nút Thao Tác */}
         <div className="space-y-6 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="space-y-2">
@@ -258,8 +268,8 @@ export const ProductDetailPage = () => {
                 {product.name}
               </h1>
 
-              {/* Rating & Reviews counter */}
-              <div className="flex items-center gap-3 text-xs">
+              {/* Rating & Reviews counter & Origin */}
+              <div className="flex flex-wrap items-center gap-3 text-xs">
                 <div className="flex items-center gap-1 text-amber-500 font-bold">
                   <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                   <span>5.0</span>
@@ -274,17 +284,40 @@ export const ProductDetailPage = () => {
               </div>
             </div>
 
-            {/* Khung giá */}
-            <div className="p-4 bg-teal-50/60 rounded-2xl border border-teal-100 flex items-center justify-between">
-              <div>
-                <span className="text-[11px] text-teal-800 uppercase font-bold block">Giá phân phối chính hãng:</span>
-                <span className="text-2xl sm:text-3xl font-black text-teal-800">
-                  {formatPrice(product.price)}
+            {/* Khung Báo Giá */}
+            <div className="p-5 bg-teal-50/70 rounded-2xl border border-teal-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] text-teal-800 uppercase font-bold block">Hình thức cung cấp:</span>
+                  <span className="text-xl sm:text-2xl font-black text-teal-900">
+                    Liên hệ nhận bảng báo giá
+                  </span>
+                </div>
+                <span className="px-3 py-1 bg-teal-700 text-white text-[11px] font-bold rounded-lg shadow-2xs">
+                  Giao nhanh toàn quốc
                 </span>
               </div>
-              <span className="px-3 py-1 bg-teal-700 text-white text-[11px] font-bold rounded-lg shadow-2xs">
-                Miễn phí giao hỏa tốc 2H
-              </span>
+              <p className="text-xs text-teal-700">
+                Chiết khấu đặc biệt cho bệnh viện, phòng khám, công ty & đơn hàng dự án số lượng lớn.
+              </p>
+            </div>
+
+            {/* Thông số xuất xứ & tiêu chuẩn */}
+            <div className="grid grid-cols-2 gap-3 p-4 bg-gray-50 rounded-2xl border border-gray-100 text-xs">
+              <div>
+                <span className="text-gray-400 block font-medium">Xuất xứ / Quốc gia:</span>
+                <span className="font-bold text-gray-800 mt-0.5 block flex items-center gap-1">
+                  <Globe className="w-3.5 h-3.5 text-indigo-600" />
+                  {originName || 'Chính hãng theo lô'}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-400 block font-medium">Tình trạng nguồn hàng:</span>
+                <span className="font-bold text-emerald-700 mt-0.5 block flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  Sẵn sàng cung ứng
+                </span>
+              </div>
             </div>
 
             {/* Mô tả tóm tắt */}
@@ -296,9 +329,9 @@ export const ProductDetailPage = () => {
             {/* Chọn số lượng */}
             <div className="space-y-2 pt-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-gray-800">Số lượng đặt mua:</span>
+                <span className="text-xs font-bold text-gray-800">Số lượng cần báo giá:</span>
                 <span className="text-[11px] text-gray-500">
-                  (Còn {product.stock || 0} sản phẩm trong kho • Tối đa 99/lần đặt)
+                  (Tối đa 99/lần thêm vào danh sách)
                 </span>
               </div>
               <div className="flex items-center gap-4">
@@ -314,16 +347,15 @@ export const ProductDetailPage = () => {
                   <input
                     type="number"
                     min="1"
-                    max={Math.min(product.stock || 99, 99)}
+                    max={99}
                     value={quantity}
                     onChange={(e) => {
                       const val = parseInt(e.target.value, 10);
-                      const maxLimit = Math.min(product.stock || 99, 99);
                       if (isNaN(val) || val < 1) {
                         setQuantity(1);
-                      } else if (val > maxLimit) {
-                        setQuantity(maxLimit);
-                        toast.error(`Số lượng tối đa có thể đặt mua là ${maxLimit} sản phẩm`);
+                      } else if (val > 99) {
+                        setQuantity(99);
+                        toast.error('Số lượng tối đa là 99 sản phẩm');
                       } else {
                         setQuantity(val);
                       }
@@ -333,14 +365,13 @@ export const ProductDetailPage = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      const maxLimit = Math.min(product.stock || 99, 99);
-                      if (quantity < maxLimit) {
+                      if (quantity < 99) {
                         setQuantity(quantity + 1);
                       } else {
-                        toast.error(`Số lượng tối đa có thể đặt mua là ${maxLimit} sản phẩm`);
+                        toast.error('Số lượng tối đa là 99 sản phẩm');
                       }
                     }}
-                    disabled={quantity >= Math.min(product.stock || 99, 99)}
+                    disabled={quantity >= 99}
                     className="p-2.5 text-gray-600 hover:bg-gray-100 transition rounded-r-xl cursor-pointer disabled:opacity-40"
                   >
                     <Plus className="w-4 h-4" />
@@ -359,23 +390,25 @@ export const ProductDetailPage = () => {
                 className="py-3.5 px-6 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 font-extrabold rounded-2xl text-xs sm:text-sm shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <ShoppingBag className="w-4 h-4" />
-                <span>Thêm Vào Giỏ Hàng</span>
+                <span>Thêm Vào Danh Sách Báo Giá</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleBuyNow}
-                className="py-3.5 px-6 bg-[#ff5722] hover:bg-[#f4511e] text-white font-black rounded-2xl text-xs sm:text-sm shadow-lg transition flex items-center justify-center gap-2 cursor-pointer transform hover:scale-[1.02]"
+                className="py-3.5 px-6 bg-teal-700 hover:bg-teal-800 text-white font-black rounded-2xl text-xs sm:text-sm shadow-lg transition flex items-center justify-center gap-2 cursor-pointer transform hover:scale-[1.02]"
               >
-                <span>MUA NGAY (GIAO 2H)</span>
+                <FileSpreadsheet className="w-4 h-4" />
+                <span>YÊU CẦU BÁO GIÁ NGAY</span>
               </button>
             </div>
 
             <Link
-              to="/consultation"
+              to={`/consultation?product=${encodeURIComponent(product.name)}`}
               className="w-full py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
             >
-              <span>Bạn cần mua số lượng lớn cho phòng khám? Gửi file yêu cầu báo giá sỉ →</span>
+              <FileText className="w-4 h-4 text-teal-700" />
+              <span>Bạn cần báo giá dự án lớn cho phòng khám? Bấm vào đây để gửi file Excel →</span>
             </Link>
           </div>
 
@@ -383,7 +416,7 @@ export const ProductDetailPage = () => {
           <div className="grid grid-cols-2 gap-3 pt-2 text-[11px] text-gray-600">
             <div className="flex items-center gap-2">
               <Truck className="w-4 h-4 text-teal-700 shrink-0" />
-              <span>Giao hàng hỏa tốc 2H</span>
+              <span>Giao hàng nhanh</span>
             </div>
             <div className="flex items-center gap-2">
               <RotateCcw className="w-4 h-4 text-teal-700 shrink-0" />
@@ -407,7 +440,7 @@ export const ProductDetailPage = () => {
           <div>
             <h2 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
               <MessageSquare className="w-6 h-6 text-teal-700" />
-              <span>Đánh Giá & Bình Luận Khách Hàng ({reviews.length})</span>
+              <span>Đánh Giá & Phản Hồi Khách Hàng ({reviews.length})</span>
             </h2>
             <p className="text-xs text-gray-500 mt-1">
               Phản hồi thực tế từ những khách hàng đã mua và sử dụng thiết bị này.
@@ -458,113 +491,128 @@ export const ProductDetailPage = () => {
 
           <div>
             <textarea
-              required
               rows="3"
-              placeholder="Chia sẻ cảm nhận của bạn về độ chính xác, độ bền hoặc trải nghiệm sử dụng thiết bị..."
+              required
               value={reviewComment}
               onChange={(e) => setReviewComment(e.target.value)}
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-teal-600"
+              placeholder="Chia sẻ trải nghiệm của bạn về độ chính xác, độ bền, chất lượng của thiết bị này..."
+              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-teal-700 focus:ring-1 focus:ring-teal-700 transition"
             ></textarea>
           </div>
 
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] text-gray-400">
-              {isAuthenticated ? `Đang đánh giá với tên: ${user?.fullName || user?.username}` : 'Vui lòng đăng nhập để gửi bình luận'}
-            </span>
-
+          <div className="flex justify-end">
             <button
               type="submit"
               disabled={submittingReview}
-              className="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-xl text-xs shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-6 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>{submittingReview ? 'Đang gửi...' : 'Gửi Đánh Giá'}</span>
+              <span>{submittingReview ? 'Đang gửi đánh giá...' : 'Gửi Đánh Giá'}</span>
             </button>
           </div>
         </form>
 
-        {/* Danh sách bình luận đã có */}
+        {/* Danh Sách Bình Luận Đã Gửi */}
         <div className="space-y-4">
           {loadingReviews ? (
-            <div className="py-8 text-center text-xs text-gray-400">Đang tải bình luận...</div>
+            <p className="text-xs text-gray-400 text-center py-6">Đang tải bình luận...</p>
           ) : reviews.length === 0 ? (
-            <div className="py-8 text-center text-xs text-gray-400">
-              Chưa có bình luận nào. Hãy là người đầu tiên đánh giá sản phẩm này!
+            <div className="text-center py-10 text-gray-400 space-y-2">
+              <MessageSquare className="w-10 h-10 mx-auto text-gray-300" />
+              <p className="text-xs font-medium">Chưa có bình luận nào cho sản phẩm này. Hãy là người đầu tiên đánh giá!</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
-              {reviews.map((rev) => (
-                <div key={rev.id} className="py-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-bold text-xs">
-                        {rev.userName ? rev.userName.charAt(0).toUpperCase() : 'U'}
-                      </div>
-                      <div>
-                        <span className="text-xs font-bold text-gray-900 block">{rev.userName}</span>
-                        <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>Đã mua hàng chính hãng</span>
-                        </span>
-                      </div>
+            reviews.map((rev) => (
+              <div key={rev.id} className="p-5 bg-white rounded-2xl border border-gray-100 shadow-2xs space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-teal-100 text-teal-800 font-bold flex items-center justify-center text-xs">
+                      {rev.userName ? rev.userName.charAt(0).toUpperCase() : 'U'}
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <div className="flex text-amber-400">
+                    <div>
+                      <span className="text-xs font-bold text-gray-900 block">
+                        {rev.userName || 'Khách Hàng'}
+                      </span>
+                      <div className="flex text-amber-400 gap-0.5">
                         {[1, 2, 3, 4, 5].map((s) => (
                           <Star
                             key={s}
-                            className={`w-3.5 h-3.5 ${s <= rev.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`}
+                            className={`w-3 h-3 ${s <= (rev.rating || 5) ? 'fill-amber-400' : 'text-gray-200'}`}
                           />
                         ))}
                       </div>
-                      <span className="text-[10px] text-gray-400">
-                        {rev.createdAt ? new Date(rev.createdAt).toLocaleDateString('vi-VN') : ''}
-                      </span>
                     </div>
                   </div>
 
-                  <p className="text-xs text-gray-700 leading-relaxed pl-10">
-                    {rev.comment}
-                  </p>
+                  <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    <span>{rev.createdAt ? new Date(rev.createdAt).toLocaleDateString('vi-VN') : 'Gần đây'}</span>
+                  </span>
                 </div>
-              ))}
-            </div>
+
+                <p className="text-xs text-gray-700 leading-relaxed pl-10">
+                  {rev.comment}
+                </p>
+              </div>
+            ))
           )}
         </div>
       </section>
 
-      {/* 3. SẢN PHẨM CÙNG DANH MỤC */}
+      {/* 3. SẢN PHẨM LIÊN QUAN */}
       {relatedProducts.length > 0 && (
         <section className="space-y-6">
-          <h2 className="text-lg font-black text-gray-900 tracking-tight">
-            Sản Phẩm Cùng Danh Mục
-          </h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">Thiết Bị Cùng Danh Mục</h2>
+              <p className="text-xs text-gray-500">Các sản phẩm tương tự bạn có thể tham khảo thêm</p>
+            </div>
+            <Link to={`/products?categoryId=${product.categoryId}`} className="text-xs font-bold text-teal-700 hover:underline">
+              Xem tất cả →
+            </Link>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {relatedProducts.map((p) => (
-              <Link
-                key={p.id}
-                to={`/products/${p.id}`}
-                className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-1 transition duration-300 flex flex-col justify-between group p-4"
+            {relatedProducts.map((relProd) => (
+              <div
+                key={relProd.id}
+                className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-lg transition flex flex-col justify-between group p-4"
               >
                 <div className="relative aspect-square overflow-hidden bg-gray-50 rounded-xl mb-3 flex items-center justify-center">
-                  <img
-                    src={p.primaryImageUrl || DEFAULT_NO_IMAGE}
-                    alt={p.name}
-                    onError={handleImageError}
-                    className="w-full h-full object-contain group-hover:scale-105 transition"
-                  />
+                  <Link to={`/products/${relProd.id}`} className="block w-full h-full p-2">
+                    <img
+                      src={relProd.primaryImageUrl || DEFAULT_NO_IMAGE}
+                      alt={relProd.name}
+                      onError={handleImageError}
+                      className="w-full h-full object-contain group-hover:scale-105 transition duration-300"
+                    />
+                  </Link>
+                  {relProd.originName && (
+                    <span className="absolute top-2 left-2 bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded border border-indigo-200">
+                      {relProd.originName}
+                    </span>
+                  )}
                 </div>
+
                 <div className="space-y-2">
-                  <h3 className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-2 group-hover:text-teal-700 transition">
-                    {p.name}
-                  </h3>
-                  <span className="font-bold text-teal-800 text-xs sm:text-sm block">
-                    {formatPrice(p.price)}
-                  </span>
+                  <Link to={`/products/${relProd.id}`}>
+                    <h3 className="font-bold text-gray-900 text-xs line-clamp-2 group-hover:text-teal-700 transition">
+                      {relProd.name}
+                    </h3>
+                  </Link>
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                    <span className="text-xs font-bold text-teal-800">
+                      Liên hệ báo giá
+                    </span>
+                    <Link
+                      to={`/products/${relProd.id}`}
+                      className="text-[11px] font-bold text-teal-700 hover:underline"
+                    >
+                      Chi tiết →
+                    </Link>
+                  </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         </section>
@@ -574,4 +622,3 @@ export const ProductDetailPage = () => {
 };
 
 export default ProductDetailPage;
-

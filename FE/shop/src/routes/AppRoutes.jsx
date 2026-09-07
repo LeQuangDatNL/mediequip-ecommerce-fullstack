@@ -24,9 +24,14 @@ import ContactPage from '../pages/customer/ContactPage';
 import ConsultationPage from '../pages/customer/ConsultationPage';
 import ProfilePage from '../pages/customer/ProfilePage';
 import OrdersPage from '../pages/customer/OrdersPage';
+import PurchaseHistoryPage from '../pages/customer/PurchaseHistoryPage';
+import UserReportsPage from '../pages/customer/UserReportsPage';
 
 // Pages - Admin Dashboard
 import AdminDashboardPage from '../pages/admin/dashboard/AdminDashboardPage';
+
+// Pages - Admin Reviews (Quản lý Bình luận)
+import ReviewIndex from '../pages/admin/reviews/ReviewIndex';
 
 // Pages - Admin Consultations (Quản lý yêu cầu tư vấn & file báo giá)
 import ConsultationIndex from '../pages/admin/consultations/ConsultationIndex';
@@ -77,6 +82,8 @@ export const AppRoutes = () => {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/orders/track" element={<OrdersPage />} />
+        <Route path="/purchase-history" element={<PurchaseHistoryPage />} />
+        <Route path="/user-reports" element={<UserReportsPage />} />
         <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -96,6 +103,9 @@ export const AppRoutes = () => {
 
           {/* Module: Yêu Cầu Báo Giá & Tư Vấn (File Excel/PDF) */}
           <Route path="consultations" element={<ConsultationIndex />} />
+
+          {/* Module: Quản lý Bình Luận & Đánh Giá */}
+          <Route path="reviews" element={<ReviewIndex />} />
 
           {/* Module 1: Quản lý Danh mục (4 Giao diện riêng biệt) */}
           <Route path="categories" element={<CategoryIndex />} />

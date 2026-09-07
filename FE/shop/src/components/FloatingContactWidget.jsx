@@ -18,10 +18,10 @@ export const FloatingContactWidget = () => {
   const HOTLINE_TEL = 'tel:0914066662';
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 select-none">
+    <div className="fixed bottom-6 left-6 z-40 flex flex-col items-start gap-3 select-none">
       {/* Cụm các nút liên hệ nổi khi mở rộng */}
       <div
-        className={`flex flex-col items-end gap-3 transition-all duration-300 transform ${
+        className={`flex flex-col items-start gap-3 transition-all duration-300 transform ${
           isOpen
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 translate-y-8 pointer-events-none'
@@ -29,10 +29,6 @@ export const FloatingContactWidget = () => {
       >
         {/* 1. NÚT GỌI HOTLINE */}
         <div className="relative group flex items-center gap-2.5">
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg whitespace-nowrap pointer-events-none">
-            Hotline: 0914 066 662 (8h - 21h)
-          </span>
-
           <a
             href={HOTLINE_TEL}
             className="relative w-12 h-12 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center shadow-lg hover:shadow-emerald-500/50 hover:scale-110 transition duration-300"
@@ -42,14 +38,14 @@ export const FloatingContactWidget = () => {
             <span className="absolute inset-0 rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
             <PhoneCall className="w-5 h-5 relative z-10 animate-bounce" />
           </a>
+
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg whitespace-nowrap pointer-events-none">
+            Hotline: 0914 066 662 (8h - 21h)
+          </span>
         </div>
 
         {/* 2. NÚT CHAT MESSENGER */}
         <div className="relative group flex items-center gap-2.5">
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg whitespace-nowrap pointer-events-none">
-            Chat Facebook Messenger
-          </span>
-
           <a
             href={MESSENGER_URL}
             target="_blank"
@@ -66,14 +62,14 @@ export const FloatingContactWidget = () => {
               <path d="M12 2C6.477 2 2 6.145 2 11.258c0 2.91 1.455 5.518 3.736 7.205V22l3.39-1.862c.907.251 1.873.388 2.874.388 5.523 0 10-4.145 10-9.268C22 6.145 17.523 2 12 2zm1.066 12.454l-2.73-2.91-5.328 2.91 5.86-6.222 2.798 2.91 5.26-2.91-5.86 6.222z" />
             </svg>
           </a>
+
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg whitespace-nowrap pointer-events-none">
+            Chat Facebook Messenger
+          </span>
         </div>
 
         {/* 3. NÚT CHAT ZALO */}
         <div className="relative group flex items-center gap-2.5">
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg whitespace-nowrap pointer-events-none">
-            Tư vấn qua Zalo
-          </span>
-
           <a
             href={ZALO_URL}
             target="_blank"
@@ -87,6 +83,10 @@ export const FloatingContactWidget = () => {
               Zalo
             </span>
           </a>
+
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-lg whitespace-nowrap pointer-events-none">
+            Tư vấn qua Zalo
+          </span>
         </div>
       </div>
 

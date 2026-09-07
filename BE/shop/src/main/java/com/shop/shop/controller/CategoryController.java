@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/admin/categories")
+@RequestMapping({"/api/admin/categories", "/api/categories"})
 @Tag(name = "Admin Categories")
 public class CategoryController {
     private final CategoryService categoryService;

@@ -24,7 +24,7 @@ export const Footer = () => {
           <div className="flex items-center gap-4 p-4 rounded-2xl bg-gray-800/60 border border-gray-700/50">
             <Truck className="w-8 h-8 text-indigo-400 shrink-0" />
             <div>
-              <h4 className="font-bold text-white text-sm">Giao hỏa tốc 2H</h4>
+              <h4 className="font-bold text-white text-sm">Giao hàng nhanh</h4>
               <p className="text-xs text-gray-400">Toàn quốc & nội thành</p>
             </div>
           </div>
@@ -81,7 +81,7 @@ export const Footer = () => {
             <div className="space-y-2.5 text-xs text-gray-300">
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
-                <span>Số 18, Ngõ 86 Phố Duy Tân, Cầu Giấy, Hà Nội</span>
+                <span>7/54 Dương Thiệu Tước</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-indigo-400 shrink-0" />

@@ -63,6 +63,8 @@ public class SecurityConfig {
                                 "/api/admin/products", "/api/admin/products/**",
                                 "/api/categories", "/api/categories/**",
                                 "/api/admin/categories", "/api/admin/categories/**",
+                                "/api/origins", "/api/origins/**",
+                                "/api/admin/origins", "/api/admin/origins/**",
                                 "/api/admin/images", "/api/admin/images/**",
                                 "/api/admin/orders", "/api/admin/orders/**",
                                 "/api/admin/users", "/api/admin/users/**")

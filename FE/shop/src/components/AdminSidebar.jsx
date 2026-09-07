@@ -12,6 +12,7 @@ import {
   BarChart3,
   Store,
   LogOut,
+  MessageSquare,
   ChevronLeft,
   ChevronRight,
   ChevronDown
@@ -63,6 +64,7 @@ export const AdminSidebar = ({ isCollapsed, toggleSidebar }) => {
   // 2. NHÓM QUẢN LÝ PHỤ & HỆ THỐNG (Các mục còn lại)
   const secondaryNavItems = [
     { to: '/admin', end: true, label: 'Tổng quan (Dashboard)', icon: LayoutDashboard },
+    { to: '/admin/reviews', label: 'Quản lý Bình luận', icon: MessageSquare },
     { to: '/admin/images', label: 'Thư viện Media & Ảnh', icon: ImageIcon },
     { to: '/admin/users', label: 'Quản lý Người dùng', icon: Users },
     { to: '/admin/statistics', label: 'Báo cáo & Thống kê', icon: BarChart3 },

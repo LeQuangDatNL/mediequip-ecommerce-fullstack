@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -56,7 +57,29 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @Operation(summary = "Admin xóa bình luận")
+    // ==================== DÀNH CHO ADMIN ====================
+    @Operation(summary = "Admin xem & tìm kiếm tất cả bình luận trên hệ thống có phân trang và bộ lọc")
+    @GetMapping("/admin/reviews")
+    public ResponseEntity<Page<ReviewResponse>> getAdminReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(required = false) Long productId,
+            @RequestParam(required = false) Integer rating,
+            @RequestParam(defaultValue = "ALL") String status
+    ) {
+        Page<ReviewResponse> reviewPage = reviewService.searchAdminReviews(page, size, keyword, productId, rating, status);
+        return ResponseEntity.ok(reviewPage);
+    }
+
+    @Operation(summary = "Admin ẩn hoặc hiện lại bình luận")
+    @PutMapping("/admin/reviews/{id}/toggle-status")
+    public ResponseEntity<ReviewResponse> toggleReviewStatus(@PathVariable Long id) {
+        ReviewResponse updated = reviewService.toggleReviewStatus(id);
+        return ResponseEntity.ok(updated);
+    }
+
+    @Operation(summary = "Admin xóa bình luận (Soft delete)")
     @DeleteMapping("/admin/reviews/{id}")
     public ResponseEntity<Void> deleteReview(@PathVariable Long id) {
         reviewService.deleteReview(id);
@@ -69,11 +92,6 @@ public class ReviewController {
         if (xf != null && !xf.isBlank()) {
             return xf.split(",")[0].trim();
         }
-        String xReal = request.getHeader("X-Real-IP");
-        if (xReal != null && !xReal.isBlank()) {
-            return xReal.trim();
-        }
         return request.getRemoteAddr();
     }
 }
-

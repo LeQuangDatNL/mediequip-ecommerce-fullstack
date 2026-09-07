@@ -18,6 +18,7 @@ import {
   Truck,
   FileSpreadsheet,
   PackageCheck,
+  ShoppingBag,
   Stethoscope,
   Layers,
   Sparkles
@@ -118,21 +119,21 @@ export const Header = () => {
                 <button
                   type="button"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-full border border-teal-200 bg-teal-50/80 hover:bg-teal-100 text-teal-900 font-bold text-xs transition duration-200 shadow-2xs hover:shadow-xs cursor-pointer"
+                  className="flex items-center gap-2 px-3 py-1 rounded-full border border-teal-200/80 bg-teal-50/90 hover:bg-teal-100/90 text-teal-950 font-bold text-xs transition duration-200 shadow-2xs hover:shadow-xs cursor-pointer group select-none"
                   title="Quản lý tài khoản"
                 >
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-teal-700 to-emerald-600 text-white flex items-center justify-center font-black text-xs shadow-xs">
-                    {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-teal-700 to-emerald-600 text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
+                    {user?.fullName ? user.fullName.charAt(0).toUpperCase() : (user?.username ? user.username.charAt(0).toUpperCase() : 'U')}
                   </div>
-                  <div className="text-left hidden lg:block max-w-[120px] truncate">
-                    <span className="text-[9px] uppercase tracking-wider text-teal-700 font-extrabold block leading-none">
-                      {isAdmin ? 'Quản trị viên' : 'Tài khoản'}
+                  <div className="text-left hidden sm:flex flex-col justify-center py-0.5">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-teal-700 leading-tight">
+                      {isAdmin ? 'Quản trị viên' : 'Khách hàng'}
                     </span>
-                    <span className="text-xs font-bold text-gray-900 truncate block mt-0.5">
+                    <span className="text-xs font-bold text-gray-900 truncate max-w-[140px] md:max-w-[170px] leading-tight" title={user?.fullName || user?.username}>
                       {user?.fullName || user?.username}
                     </span>
                   </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-teal-700" />
+                  <ChevronDown className={`w-4 h-4 text-teal-700 transition-transform duration-200 shrink-0 self-center ${userDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Dropdown Menu */}
@@ -172,16 +173,25 @@ export const Header = () => {
                         className="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 font-medium transition"
                       >
                         <User className="w-4 h-4 text-teal-600" />
-                        Quản lý tài khoản của tôi
+                        Quản lý tài khoản
                       </Link>
 
                       <Link
-                        to="/orders"
+                        to="/purchase-history"
                         onClick={() => setUserDropdownOpen(false)}
                         className="flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 font-medium transition"
                       >
-                        <PackageCheck className="w-4 h-4 text-teal-600" />
-                        Đơn hàng của tôi
+                        <ShoppingBag className="w-4 h-4 text-teal-600" />
+                        Lịch sử mua hàng
+                      </Link>
+
+                      <Link
+                        to="/user-reports"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-xs text-teal-800 bg-teal-50/50 hover:bg-teal-50 font-bold transition"
+                      >
+                        <FileSpreadsheet className="w-4 h-4 text-teal-600" />
+                        Báo cáo Excel của tôi
                       </Link>
 
                       <button
@@ -352,7 +362,7 @@ export const Header = () => {
             <div className="flex items-center space-x-2 sm:space-x-3 text-[11px]">
               <span className="hidden lg:flex items-center gap-1 text-teal-100">
                 <Truck className="w-3.5 h-3.5 text-emerald-300" />
-                <span>Giao hàng 2H</span>
+                <span>Giao hàng nhanh</span>
               </span>
 
               <a
@@ -423,11 +433,11 @@ export const Header = () => {
             Tất cả sản phẩm
           </NavLink>
           <NavLink
-            to="/orders"
+            to="/purchase-history"
             onClick={() => setMobileMenuOpen(false)}
             className="block py-2 text-xs font-semibold text-gray-700"
           >
-            Đơn mua của tôi
+            Lịch sử mua hàng
           </NavLink>
           <NavLink
             to="/contact"

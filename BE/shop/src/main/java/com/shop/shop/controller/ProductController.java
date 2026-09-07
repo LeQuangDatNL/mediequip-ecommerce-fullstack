@@ -16,8 +16,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/admin/products")
-@Tag(name = "Admin Products")
+@RequestMapping({"/api/admin/products", "/api/products"})
+@Tag(name = "Products")
+@CrossOrigin(origins = "*")
 public class ProductController {
     private final ProductService productService;
     private final ProductExcelService productExcelService;
@@ -32,17 +33,28 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "") String keyword,
-            @RequestParam(required = false) Long categoryId
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long originId
     ) {
-        return productService.findAll(page, size, keyword, categoryId);
+        return productService.findAll(page, size, keyword, categoryId, originId);
     }
 
     @GetMapping("/{id}")
-    public ProductResponse findById(@PathVariable Long id) { return productService.findById(id); }
+    public ProductResponse findById(@PathVariable Long id) {
+        return productService.findById(id);
+    }
+
+    @GetMapping("/slug/{slug}")
+    @Operation(summary = "Tra cứu chi tiết sản phẩm theo Slug (Đường dẫn thân thiện)")
+    public ProductResponse findBySlug(@PathVariable String slug) {
+        return productService.findBySlug(slug);
+    }
 
     @PostMapping
     @Operation(summary = "Create a product")
-    public ProductResponse create(@Valid @RequestBody ProductRequest request) { return productService.create(request); }
+    public ProductResponse create(@Valid @RequestBody ProductRequest request) {
+        return productService.create(request);
+    }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a product")
@@ -52,7 +64,9 @@ public class ProductController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a product")
-    public void delete(@PathVariable Long id) { productService.delete(id); }
+    public void delete(@PathVariable Long id) {
+        productService.delete(id);
+    }
 
     @GetMapping("/excel-template")
     @Operation(summary = "Tải file Excel mẫu để nhập sản phẩm hàng loạt")

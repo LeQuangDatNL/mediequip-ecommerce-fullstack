@@ -1,14 +1,17 @@
 import apiClient from './apiClient';
 
 export const productService = {
-  // Lấy danh sách sản phẩm từ Backend (phân trang, tìm kiếm và lọc theo danh mục, mặc định 12 sản phẩm/trang)
-  async getProducts(page = 0, keyword = '', categoryId = null, size = 12) {
+  // Lấy danh sách sản phẩm từ Backend (phân trang, tìm kiếm và lọc theo danh mục, xuất xứ, mặc định 12 sản phẩm/trang)
+  async getProducts(page = 0, keyword = '', categoryId = null, originId = null, size = 12) {
     const params = { page, size };
     if (keyword && keyword.trim()) {
       params.keyword = keyword.trim();
     }
     if (categoryId) {
       params.categoryId = categoryId;
+    }
+    if (originId) {
+      params.originId = originId;
     }
     const response = await apiClient.get('/api/admin/products', { params });
     return response.data; // Page<ProductResponse> (content, totalElements, totalPages...)
@@ -17,6 +20,12 @@ export const productService = {
   // Lấy chi tiết sản phẩm theo ID
   async getProductById(id) {
     const response = await apiClient.get(`/api/admin/products/${id}`);
+    return response.data;
+  },
+
+  // Lấy chi tiết sản phẩm theo Slug (Đường dẫn thân thiện SEO)
+  async getProductBySlug(slug) {
+    const response = await apiClient.get(`/api/products/slug/${slug}`);
     return response.data;
   },
 
@@ -88,4 +97,3 @@ export const productService = {
 };
 
 export default productService;
-

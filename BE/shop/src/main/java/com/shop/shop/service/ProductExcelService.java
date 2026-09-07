@@ -3,8 +3,10 @@ package com.shop.shop.service;
 import com.shop.shop.dto.response.ProductImportResult;
 import com.shop.shop.dto.response.ProductResponse;
 import com.shop.shop.entity.Category;
+import com.shop.shop.entity.Origin;
 import com.shop.shop.entity.Product;
 import com.shop.shop.repository.CategoryRepository;
+import com.shop.shop.repository.OriginRepository;
 import com.shop.shop.repository.ProductImageRepository;
 import com.shop.shop.repository.ProductRepository;
 import com.shop.shop.repository.ReviewRepository;
@@ -19,7 +21,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -30,30 +31,35 @@ public class ProductExcelService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final OriginRepository originRepository;
     private final ProductImageRepository productImageRepository;
     private final ReviewRepository reviewRepository;
 
     public ProductExcelService(
             ProductRepository productRepository,
             CategoryRepository categoryRepository,
+            OriginRepository originRepository,
             ProductImageRepository productImageRepository,
             ReviewRepository reviewRepository
     ) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
+        this.originRepository = originRepository;
         this.productImageRepository = productImageRepository;
         this.reviewRepository = reviewRepository;
     }
 
     /**
-     * Tạo file mẫu Excel (.xlsx) gồm Sheet nhập dữ liệu và Sheet danh mục tham khảo
+     * Tạo file mẫu Excel (.xlsx) gồm:
+     * Sheet 1: Mẫu nhập sản phẩm (đã bỏ giá & tồn kho, thêm xuất xứ)
+     * Sheet 2: Danh mục tham khảo
+     * Sheet 3: Xuất xứ tham khảo
      */
     public byte[] generateTemplate() {
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             // 1. Tạo Sheet 1: Mẫu nhập sản phẩm
             Sheet sheet1 = workbook.createSheet("MauNhapSanPham");
 
-            // Style cho Header Sheet 1 (Màu xanh Indigo, chữ trắng đậm)
             CellStyle headerStyle1 = workbook.createCellStyle();
             Font headerFont1 = workbook.createFont();
             headerFont1.setBold(true);
@@ -69,7 +75,6 @@ public class ProductExcelService {
             headerStyle1.setBorderRight(BorderStyle.THIN);
             headerStyle1.setBorderLeft(BorderStyle.THIN);
 
-            // Style dữ liệu
             CellStyle textStyle = workbook.createCellStyle();
             textStyle.setBorderBottom(BorderStyle.THIN);
             textStyle.setBorderTop(BorderStyle.THIN);
@@ -83,13 +88,12 @@ public class ProductExcelService {
             String[] headers1 = {
                     "Tên sản phẩm (*)",
                     "Mã (ID) hoặc Tên danh mục (*)",
+                    "Mã (ID), Tên hoặc Code xuất xứ (Origin)",
                     "Đường dẫn tĩnh (Slug)",
-                    "Giá bán (VNĐ)",
-                    "Số lượng tồn kho (*)",
                     "Link ảnh chính (URL)",
                     "Link ảnh phụ (ngăn cách bởi dấu phẩy ,)",
                     "Mô tả sản phẩm",
-                    "Trạng thái (ACTIVE / INACTIVE / OUT_OF_STOCK)"
+                    "Trạng thái (ACTIVE / INACTIVE)"
             };
 
             Row headerRow1 = sheet1.createRow(0);
@@ -109,9 +113,8 @@ public class ProductExcelService {
                     {
                             "Máy đo huyết áp bắp tay Omron HEM-7120",
                             sampleCat1,
+                            "Nhật Bản",
                             "may-do-huyet-ap-omron-hem-7120",
-                            790000,
-                            50,
                             "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d",
                             "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae, https://images.unsplash.com/photo-1583912267670-6575ad472688",
                             "Máy đo huyết áp tự động độ chính xác cao công nghệ Intellisense",
@@ -120,9 +123,8 @@ public class ProductExcelService {
                     {
                             "Nhiệt kế hồng ngoại Microlife FR1MF1",
                             sampleCat2,
+                            "Thụy Sĩ",
                             "", // để trống để tự sinh slug
-                            650000,
-                            100,
                             "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae",
                             "",
                             "Đo nhiệt độ không tiếp xúc trong 1 giây nhanh chóng",
@@ -131,9 +133,8 @@ public class ProductExcelService {
                     {
                             "Máy tạo oxy Yuwell 7F-5D 5 lít",
                             sampleCat1,
+                            "Trung Quốc",
                             "may-tao-oxy-yuwell-7f-5d-5-lit",
-                            9200000,
-                            15,
                             "https://images.unsplash.com/photo-1583912267670-6575ad472688",
                             "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d",
                             "Cung cấp oxy tinh khiết lưu lượng 1 - 5 lít/phút liên tục",
@@ -157,7 +158,6 @@ public class ProductExcelService {
                 }
             }
 
-            // Tự động căn chỉnh độ rộng cột Sheet 1
             for (int i = 0; i < headers1.length; i++) {
                 sheet1.autoSizeColumn(i);
                 sheet1.setColumnWidth(i, Math.max(sheet1.getColumnWidth(i) + 1200, 4200));
@@ -165,7 +165,6 @@ public class ProductExcelService {
 
             // 2. Tạo Sheet 2: Danh mục tham khảo
             Sheet sheet2 = workbook.createSheet("DanhMucThamKhao");
-
             CellStyle headerStyle2 = workbook.createCellStyle();
             Font headerFont2 = workbook.createFont();
             headerFont2.setBold(true);
@@ -215,6 +214,58 @@ public class ProductExcelService {
                 sheet2.setColumnWidth(i, Math.max(sheet2.getColumnWidth(i) + 1200, 3800));
             }
 
+            // 3. Tạo Sheet 3: Xuất xứ tham khảo
+            Sheet sheet3 = workbook.createSheet("XuatXuThamKhao");
+            CellStyle headerStyle3 = workbook.createCellStyle();
+            Font headerFont3 = workbook.createFont();
+            headerFont3.setBold(true);
+            headerFont3.setColor(IndexedColors.WHITE.getIndex());
+            headerStyle3.setFont(headerFont3);
+            headerStyle3.setFillForegroundColor(IndexedColors.ROYAL_BLUE.getIndex());
+            headerStyle3.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle3.setAlignment(HorizontalAlignment.CENTER);
+            headerStyle3.setBorderBottom(BorderStyle.THIN);
+            headerStyle3.setBorderTop(BorderStyle.THIN);
+            headerStyle3.setBorderRight(BorderStyle.THIN);
+            headerStyle3.setBorderLeft(BorderStyle.THIN);
+
+            String[] headers3 = { "ID Xuất Xứ", "Tên Quốc Gia / Xuất Xứ", "Mã Quốc Gia (Code)", "Mô Tả Tiêu Chuẩn" };
+            Row headerRow3 = sheet3.createRow(0);
+            headerRow3.setHeightInPoints(24);
+            for (int i = 0; i < headers3.length; i++) {
+                Cell cell = headerRow3.createCell(i);
+                cell.setCellValue(headers3[i]);
+                cell.setCellStyle(headerStyle3);
+            }
+
+            List<Origin> activeOrigins = originRepository.findAllActive(Sort.by(Sort.Direction.ASC, "id"));
+            int origRowNum = 1;
+            for (Origin orig : activeOrigins) {
+                Row row = sheet3.createRow(origRowNum++);
+                row.setHeightInPoints(19);
+
+                Cell c0 = row.createCell(0);
+                c0.setCellValue(orig.getId());
+                c0.setCellStyle(numberStyle);
+
+                Cell c1 = row.createCell(1);
+                c1.setCellValue(orig.getName() != null ? orig.getName() : "");
+                c1.setCellStyle(textStyle);
+
+                Cell c2 = row.createCell(2);
+                c2.setCellValue(orig.getCode() != null ? orig.getCode() : "");
+                c2.setCellStyle(textStyle);
+
+                Cell c3 = row.createCell(3);
+                c3.setCellValue(orig.getDescription() != null ? orig.getDescription() : "");
+                c3.setCellStyle(textStyle);
+            }
+
+            for (int i = 0; i < headers3.length; i++) {
+                sheet3.autoSizeColumn(i);
+                sheet3.setColumnWidth(i, Math.max(sheet3.getColumnWidth(i) + 1200, 3800));
+            }
+
             workbook.write(out);
             return out.toByteArray();
         } catch (Exception e) {
@@ -255,17 +306,16 @@ public class ProductExcelService {
                 }
 
                 totalRows++;
-                int displayRow = r + 1; // 1-indexed số dòng trong Excel
+                int displayRow = r + 1;
 
                 String name = getCellValue(row.getCell(0));
                 String categoryRaw = getCellValue(row.getCell(1));
-                String slug = getCellValue(row.getCell(2));
-                String priceRaw = getCellValue(row.getCell(3));
-                String stockRaw = getCellValue(row.getCell(4));
-                String primaryImageUrl = getCellValue(row.getCell(5));
-                String subImagesRaw = getCellValue(row.getCell(6));
-                String description = getCellValue(row.getCell(7));
-                String statusRaw = getCellValue(row.getCell(8));
+                String originRaw = getCellValue(row.getCell(2));
+                String slug = getCellValue(row.getCell(3));
+                String primaryImageUrl = getCellValue(row.getCell(4));
+                String subImagesRaw = getCellValue(row.getCell(5));
+                String description = getCellValue(row.getCell(6));
+                String statusRaw = getCellValue(row.getCell(7));
 
                 // 1. Kiểm tra Tên sản phẩm
                 if (name == null || name.trim().isEmpty()) {
@@ -285,7 +335,13 @@ public class ProductExcelService {
                     continue;
                 }
 
-                // 3. Xử lý Slug
+                // 3. Xử lý Xuất xứ (nếu có)
+                Origin origin = null;
+                if (originRaw != null && !originRaw.trim().isEmpty()) {
+                    origin = resolveOrigin(originRaw.trim());
+                }
+
+                // 4. Xử lý Slug
                 if (slug == null || slug.trim().isEmpty()) {
                     slug = generateSlug(name);
                 } else {
@@ -296,47 +352,7 @@ public class ProductExcelService {
                 String finalSlug = resolveUniqueSlug(slug, processedSlugs);
                 processedSlugs.add(finalSlug);
 
-                // 4. Xử lý Giá bán (Giới hạn tối đa 10 tỷ để chống spam)
-                BigDecimal price = null;
-                if (priceRaw != null && !priceRaw.trim().isEmpty()) {
-                    try {
-                        String cleanPrice = priceRaw.replaceAll("[,.\\s]", "");
-                        price = new BigDecimal(cleanPrice);
-                        if (price.compareTo(BigDecimal.ZERO) < 0) {
-                            errors.add(new ProductImportResult.RowError(displayRow, name, "Giá sản phẩm không được là số âm"));
-                            continue;
-                        }
-                        if (price.compareTo(new BigDecimal("10000000000")) > 0) {
-                            errors.add(new ProductImportResult.RowError(displayRow, name, "Giá sản phẩm không được vượt quá 10 tỷ VNĐ"));
-                            continue;
-                        }
-                    } catch (Exception e) {
-                        errors.add(new ProductImportResult.RowError(displayRow, name, "Giá sản phẩm '" + priceRaw + "' không đúng định dạng số"));
-                        continue;
-                    }
-                }
-
-                // 5. Xử lý Tồn kho (Giới hạn tối đa 100,000 để chống spam)
-                Integer stock = 0;
-                if (stockRaw != null && !stockRaw.trim().isEmpty()) {
-                    try {
-                        String cleanStock = stockRaw.replaceAll("[,.\\s]", "");
-                        stock = Integer.parseInt(cleanStock);
-                        if (stock < 0) {
-                            errors.add(new ProductImportResult.RowError(displayRow, name, "Số lượng tồn kho không được âm"));
-                            continue;
-                        }
-                        if (stock > 100000) {
-                            errors.add(new ProductImportResult.RowError(displayRow, name, "Số lượng tồn kho không được vượt quá 100,000 (giới hạn chống spam)"));
-                            continue;
-                        }
-                    } catch (Exception e) {
-                        errors.add(new ProductImportResult.RowError(displayRow, name, "Số lượng tồn kho '" + stockRaw + "' không hợp lệ"));
-                        continue;
-                    }
-                }
-
-                // 6. Xử lý Trạng thái
+                // 5. Xử lý Trạng thái
                 Product.Status status = Product.Status.ACTIVE;
                 if (statusRaw != null && !statusRaw.trim().isEmpty()) {
                     try {
@@ -350,9 +366,8 @@ public class ProductExcelService {
                 Product product = new Product();
                 product.setName(name);
                 product.setCategory(category);
+                product.setOrigin(origin);
                 product.setSlug(finalSlug);
-                product.setPrice(price);
-                product.setStock(stock);
                 product.setPrimaryImageUrl(primaryImageUrl != null && !primaryImageUrl.trim().isEmpty() ? primaryImageUrl.trim() : null);
                 product.setDescription(description != null && !description.trim().isEmpty() ? description.trim() : null);
                 product.setStatus(status);
@@ -425,9 +440,8 @@ public class ProductExcelService {
                     "Mã SP (ID)",
                     "Tên sản phẩm",
                     "Danh mục",
+                    "Xuất xứ (Quốc gia)",
                     "Đường dẫn (Slug)",
-                    "Giá bán (VNĐ)",
-                    "Tồn kho",
                     "Trạng thái",
                     "Ảnh chính",
                     "Ngày tạo"
@@ -464,33 +478,24 @@ public class ProductExcelService {
                 c2.setCellStyle(textStyle);
 
                 Cell c3 = row.createCell(3);
-                c3.setCellValue(p.getSlug());
+                c3.setCellValue(p.getOrigin() != null ? p.getOrigin().getName() : "Không rõ");
                 c3.setCellStyle(textStyle);
 
                 Cell c4 = row.createCell(4);
-                if (p.getPrice() != null) {
-                    c4.setCellValue(p.getPrice().doubleValue());
-                    c4.setCellStyle(numberStyle);
-                } else {
-                    c4.setCellValue("");
-                    c4.setCellStyle(textStyle);
-                }
+                c4.setCellValue(p.getSlug());
+                c4.setCellStyle(textStyle);
 
                 Cell c5 = row.createCell(5);
-                c5.setCellValue(p.getStock() != null ? p.getStock() : 0);
-                c5.setCellStyle(numberStyle);
+                c5.setCellValue(p.getStatus() != null ? p.getStatus().name() : "ACTIVE");
+                c5.setCellStyle(textStyle);
 
                 Cell c6 = row.createCell(6);
-                c6.setCellValue(p.getStatus() != null ? p.getStatus().name() : "ACTIVE");
+                c6.setCellValue(p.getPrimaryImageUrl() != null ? p.getPrimaryImageUrl() : "");
                 c6.setCellStyle(textStyle);
 
                 Cell c7 = row.createCell(7);
-                c7.setCellValue(p.getPrimaryImageUrl() != null ? p.getPrimaryImageUrl() : "");
+                c7.setCellValue(p.getCreatedAt() != null ? p.getCreatedAt().format(dtf) : "");
                 c7.setCellStyle(textStyle);
-
-                Cell c8 = row.createCell(8);
-                c8.setCellValue(p.getCreatedAt() != null ? p.getCreatedAt().format(dtf) : "");
-                c8.setCellStyle(textStyle);
             }
 
             for (int i = 0; i < headers.length; i++) {
@@ -509,15 +514,29 @@ public class ProductExcelService {
         if (raw == null || raw.trim().isEmpty()) return null;
         String trimmed = raw.trim();
 
-        // 1. Thử parse dạng ID số
         try {
             long id = Long.parseLong(trimmed.replaceAll("\\.0$", ""));
             Optional<Category> byId = categoryRepository.findActiveById(id);
             if (byId.isPresent()) return byId.get();
         } catch (NumberFormatException ignored) {}
 
-        // 2. Thử tìm theo Tên danh mục (không phân biệt hoa thường)
         return categoryRepository.findFirstByNameIgnoreCaseAndIsDeletedFalse(trimmed).orElse(null);
+    }
+
+    private Origin resolveOrigin(String raw) {
+        if (raw == null || raw.trim().isEmpty()) return null;
+        String trimmed = raw.trim();
+
+        try {
+            long id = Long.parseLong(trimmed.replaceAll("\\.0$", ""));
+            Optional<Origin> byId = originRepository.findActiveById(id);
+            if (byId.isPresent()) return byId.get();
+        } catch (NumberFormatException ignored) {}
+
+        Optional<Origin> byCode = originRepository.findFirstByCodeIgnoreCaseAndIsDeletedFalse(trimmed);
+        if (byCode.isPresent()) return byCode.get();
+
+        return originRepository.findFirstByNameIgnoreCaseAndIsDeletedFalse(trimmed).orElse(null);
     }
 
     private String resolveUniqueSlug(String baseSlug, Set<String> currentBatchSlugs) {
@@ -592,4 +611,3 @@ public class ProductExcelService {
         return ProductResponse.from(product, imageUrls, rating, reviewCount);
     }
 }
-

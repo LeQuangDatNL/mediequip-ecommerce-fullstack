@@ -144,7 +144,7 @@ public class OrderService {
             item.setOrder(order);
             item.setProduct(product);
             item.setProductName(product.getName());
-            item.setPrice(product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO);
+            item.setPrice(BigDecimal.ZERO);
             item.setQuantity(itemReq.quantity() != null && itemReq.quantity() > 0 ? itemReq.quantity() : 1);
 
             BigDecimal lineTotal = item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));

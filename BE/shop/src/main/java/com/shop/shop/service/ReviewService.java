@@ -10,8 +10,13 @@ import com.shop.shop.repository.OrderRepository;
 import com.shop.shop.repository.ProductRepository;
 import com.shop.shop.repository.ReviewRepository;
 import com.shop.shop.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -87,12 +92,43 @@ public class ReviewService {
         return ReviewResponse.fromEntity(saved);
     }
 
+    // ==================== DÀNH CHO ADMIN ====================
+    // 1. Phân trang, tìm kiếm và lọc tất cả bình luận
+    @Transactional(readOnly = true)
+    public Page<ReviewResponse> searchAdminReviews(
+            int page,
+            int size,
+            String keyword,
+            Long productId,
+            Integer rating,
+            String status
+    ) {
+        if (page < 0) page = 0;
+        if (size <= 0) size = 10;
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+
+        String cleanKeyword = keyword != null ? keyword.trim() : "";
+        Page<Review> reviewPage = reviewRepository.searchReviewsForAdmin(cleanKeyword, productId, rating, pageRequest);
+
+        return reviewPage.map(ReviewResponse::fromEntity);
+    }
+
+    // 2. Ẩn / Hiện bình luận (Toggle status)
+    @Transactional
+    public ReviewResponse toggleReviewStatus(Long reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bình luận #" + reviewId));
+        review.setIsDeleted(!Boolean.TRUE.equals(review.getIsDeleted()));
+        Review saved = reviewRepository.save(review);
+        return ReviewResponse.fromEntity(saved);
+    }
+
+    // 3. Xóa bình luận (Soft delete)
     @Transactional
     public void deleteReview(Long reviewId) {
         Review review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy bình luận với ID: " + reviewId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bình luận với ID: " + reviewId));
         review.setIsDeleted(true);
         reviewRepository.save(review);
     }
 }
-

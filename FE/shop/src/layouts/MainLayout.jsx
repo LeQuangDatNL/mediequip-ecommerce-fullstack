@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import FloatingContactWidget from '../components/FloatingContactWidget';
+import FloatingChatWidget from '../components/FloatingChatWidget';
 
 export const MainLayout = () => {
   return (
@@ -12,7 +13,8 @@ export const MainLayout = () => {
         <Outlet />
       </main>
       <Footer />
-      {/* Bong bóng chat nổi Zalo, Messenger, Hotline */}
+      {/* Widget Chatbot AI thông minh & Bong bóng liên hệ */}
+      <FloatingChatWidget />
       <FloatingContactWidget />
     </div>
   );

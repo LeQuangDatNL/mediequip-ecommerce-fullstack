@@ -16,7 +16,9 @@ import {
   CheckCircle2,
   XCircle,
   CreditCard,
-  Banknote
+  Banknote,
+  FileSpreadsheet,
+  Download
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -229,7 +231,24 @@ export const OrderIndex = () => {
                     <td className="px-5 py-4">
                       {getOrderStatusBadge(ord.orderStatus)}
                     </td>
-                    <td className="px-5 py-4 text-right space-x-2">
+                    <td className="px-5 py-4 text-right space-x-1.5 whitespace-nowrap">
+                      {/* Tải Bảng Báo Giá Excel */}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await orderService.downloadQuotation(ord.id);
+                            toast.success(`Đã tải xuống Bảng báo giá Excel #MD-${ord.id}!`);
+                          } catch (err) {
+                            toast.error('Không thể xuất file Excel báo giá!');
+                          }
+                        }}
+                        className="inline-flex p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition cursor-pointer"
+                        title="Tải Bảng Báo Giá Excel (.xlsx)"
+                      >
+                        <FileSpreadsheet className="w-4 h-4" />
+                      </button>
+
                       {/* Xem chi tiết & Cập nhật đơn hàng */}
                       <Link
                         to={`/admin/orders/update/${ord.id}`}

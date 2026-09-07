@@ -43,6 +43,18 @@ public class OrderController {
         return orderService.updateStatus(id, request);
     }
 
+    @GetMapping("/{id}/quotation")
+    @Operation(summary = "Tải bảng báo giá Excel (.xlsx) cho đơn hàng dành cho Admin")
+    public org.springframework.http.ResponseEntity<byte[]> downloadQuotation(@PathVariable Long id) {
+        byte[] excelBytes = orderService.exportQuotationExcel(id);
+        String filename = "Bao_Gia_Thiet_Bi_Y_Te_Kim_Lien_Don_" + id + ".xlsx";
+
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(org.springframework.http.MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excelBytes);
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Xóa mềm / Hủy đơn hàng")
     public void cancelOrder(@PathVariable Long id) {

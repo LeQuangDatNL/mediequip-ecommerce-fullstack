@@ -23,6 +23,7 @@ import WishlistPage from '../pages/customer/WishlistPage';
 import ContactPage from '../pages/customer/ContactPage';
 import ConsultationPage from '../pages/customer/ConsultationPage';
 import ProfilePage from '../pages/customer/ProfilePage';
+import OrdersPage from '../pages/customer/OrdersPage';
 
 // Pages - Admin Dashboard
 import AdminDashboardPage from '../pages/admin/dashboard/AdminDashboardPage';
@@ -74,6 +75,8 @@ export const AppRoutes = () => {
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/consultation" element={<ConsultationPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/orders/track" element={<OrdersPage />} />
         <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -83,15 +86,6 @@ export const AppRoutes = () => {
         {/* Các route tài khoản khách hàng */}
         <Route element={<ProtectedRoute />}>
           <Route path="/profile" element={<ProfilePage />} />
-          <Route
-            path="/orders"
-            element={
-              <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-xs max-w-3xl mx-auto space-y-4">
-                <h1 className="text-xl font-bold text-gray-900">Đơn Mua Của Tôi</h1>
-                <p className="text-xs text-gray-500">Lịch sử đơn hàng bạn đã đặt mua tại Thiết Bị Y Tế Kim Liên.</p>
-              </div>
-            }
-          />
         </Route>
       </Route>
 

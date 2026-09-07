@@ -30,4 +30,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @EntityGraph(attributePaths = {"user", "address", "items"})
     @Query("SELECT o FROM Order o WHERE o.id = :id AND o.isDeleted = false")
     Optional<Order> findActiveById(@Param("id") Long id);
+
+    @EntityGraph(attributePaths = {"user", "address", "items"})
+    @Query("SELECT o FROM Order o WHERE o.user.id = :userId AND o.isDeleted = false ORDER BY o.id DESC")
+    java.util.List<Order> findByUserIdAndIsDeletedFalseOrderByIdDesc(@Param("userId") Long userId);
+
+    @EntityGraph(attributePaths = {"user", "address", "items"})
+    @Query("SELECT o FROM Order o WHERE o.id = :id AND o.address.phone = :phone AND o.isDeleted = false")
+    Optional<Order> findByIdAndPhoneAndIsDeletedFalse(@Param("id") Long id, @Param("phone") String phone);
 }

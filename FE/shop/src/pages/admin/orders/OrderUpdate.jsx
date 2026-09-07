@@ -15,7 +15,9 @@ import {
   MapPin,
   User,
   Phone,
-  Calendar
+  Calendar,
+  FileSpreadsheet,
+  Download
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -27,10 +29,13 @@ export const OrderUpdate = () => {
   const [formData, setFormData] = useState({
     orderStatus: 'PENDING',
     paymentStatus: 'UNPAID',
+    shippingFee: 0,
+    discountAmount: 0,
     note: '',
   });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -41,6 +46,8 @@ export const OrderUpdate = () => {
         setFormData({
           orderStatus: data.orderStatus || 'PENDING',
           paymentStatus: data.paymentStatus || 'UNPAID',
+          shippingFee: data.shippingFee || 0,
+          discountAmount: data.discountAmount || 0,
           note: data.note || '',
         });
       } catch (error) {
@@ -111,13 +118,42 @@ export const OrderUpdate = () => {
               </div>
             </div>
 
-            <Link
-              to={`/admin/orders/delete/${order.id}`}
-              className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-xs font-semibold transition inline-flex items-center gap-1.5 self-start sm:self-center"
-            >
-              <XCircle className="w-4 h-4" />
-              <span>Hủy Đơn Hàng (Xóa mềm)</span>
-            </Link>
+            <div className="flex items-center gap-2 self-start sm:self-center">
+              <button
+                type="button"
+                onClick={async () => {
+                  setDownloading(true);
+                  try {
+                    await orderService.downloadQuotation(order.id);
+                    toast.success(`Đã xuất Bảng báo giá Excel #MD-${order.id}!`);
+                  } catch (err) {
+                    toast.error('Không thể xuất file Excel!');
+                  } finally {
+                    setDownloading(false);
+                  }
+                }}
+                disabled={downloading}
+                className="px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-xs font-semibold transition inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {downloading ? (
+                  <div className="w-3.5 h-3.5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                    <span>Xuất Báo Giá Excel</span>
+                    <Download className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+
+              <Link
+                to={`/admin/orders/delete/${order.id}`}
+                className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-xs font-semibold transition inline-flex items-center gap-1.5"
+              >
+                <XCircle className="w-4 h-4" />
+                <span>Hủy Đơn (Xóa mềm)</span>
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -243,6 +279,34 @@ export const OrderUpdate = () => {
                       <option value="FAILED">Thất bại (FAILED)</option>
                       <option value="REFUNDED">Hoàn tiền (REFUNDED)</option>
                     </select>
+                  </div>
+
+                  {/* Chiết khấu & Phí vận chuyển báo giá */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Chiết khấu (VNĐ)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.discountAmount}
+                        onChange={(e) => setFormData({ ...formData, discountAmount: Number(e.target.value) })}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Phí vận chuyển (VNĐ)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={formData.shippingFee}
+                        onChange={(e) => setFormData({ ...formData, shippingFee: Number(e.target.value) })}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
                   </div>
 
                   {/* Ghi chú */}

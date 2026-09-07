@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../hooks/useAuth';
 import addressService from '../../services/addressService';
+import orderService from '../../services/orderService';
 import MapAddressPicker from '../../components/MapAddressPicker';
 import {
   ShoppingCart,
@@ -48,6 +49,9 @@ export const CartPage = () => {
     note: '',
   });
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [createdOrder, setCreatedOrder] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
 
   // Tự động điền thông tin người nhận nếu đã đăng nhập
   useEffect(() => {
@@ -114,25 +118,72 @@ export const CartPage = () => {
     setTimeout(() => setCopiedBank(false), 2500);
   };
 
-  const handleCheckoutSubmit = (e) => {
+  const handleDownloadQuotation = async () => {
+    if (!createdOrder?.id) return;
+    setDownloadingExcel(true);
+    try {
+      await orderService.downloadQuotation(createdOrder.id);
+      toast.success(`Đã tải xuống Bảng báo giá Excel cho Đơn hàng #MD-${createdOrder.id}!`);
+    } catch (error) {
+      console.error('Lỗi tải bảng báo giá:', error);
+      toast.error('Không thể xuất file Excel báo giá. Vui lòng thử lại!');
+    } finally {
+      setDownloadingExcel(false);
+    }
+  };
+
+  const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
     if (!formData.recipientName.trim() || !formData.phone.trim() || !formData.address.trim()) {
       toast.error('Vui lòng điền đầy đủ họ tên, số điện thoại và địa chỉ nhận hàng!');
       return;
     }
 
-    setOrderSuccess(true);
-    clearCart();
-    toast.success('Gửi đơn hàng thành công! Đội ngũ Kỹ sư Kim Liên Medical sẽ liên hệ báo giá & xác nhận.');
+    if (cartItems.length === 0) {
+      toast.error('Giỏ hàng của bạn đang trống!');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const orderPayload = {
+        recipientName: formData.recipientName.trim(),
+        phone: formData.phone.trim(),
+        address: formData.address.trim(),
+        addressDetail: formData.address.trim(),
+        paymentMethod: formData.paymentMethod,
+        note: formData.note ? formData.note.trim() : '',
+        items: cartItems.map((item) => ({
+          productId: Number(item.id || item.productId),
+          quantity: Number(item.quantity) || 1,
+        })),
+      };
+
+      const result = await orderService.createOrder(orderPayload);
+      setCreatedOrder(result);
+      setOrderSuccess(true);
+      clearCart();
+      toast.success(`Gửi đơn hàng #MD-${result.id} thành công! Kỹ sư Kim Liên sẽ liên hệ báo giá & xác nhận.`);
+    } catch (error) {
+      console.error('Lỗi khi gửi đơn hàng:', error);
+      const msg = error.response?.data?.message || 'Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại!';
+      toast.error(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (orderSuccess) {
+    const orderId = createdOrder?.id || 'MỚI';
     return (
       <div className="max-w-2xl mx-auto py-10 px-4 text-center space-y-6 bg-white rounded-3xl border border-gray-100 shadow-xl p-6 sm:p-8 animate-fade-in">
         <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-md">
           <CheckCircle2 className="w-10 h-10" />
         </div>
         <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full border border-emerald-200">
+            <span>Mã đơn hàng: #MD-{orderId}</span>
+          </div>
           <h2 className="text-2xl font-black text-gray-900">Gửi Đơn Hàng Thành Công!</h2>
           <p className="text-xs sm:text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
             Cảm ơn bạn đã đặt hàng tại <strong>MediEquip Vietnam - Thiết Bị Y Tế Kim Liên</strong>. Đội ngũ Kỹ sư y tế sẽ liên hệ qua số điện thoại <strong>{formData.phone}</strong> trong 15-30 phút để báo giá chiết khấu ưu đãi và chốt lịch giao hàng.
@@ -142,7 +193,7 @@ export const CartPage = () => {
         <div className="p-4 sm:p-5 bg-gray-50 rounded-2xl border border-gray-200 text-xs text-left space-y-2 max-w-lg mx-auto">
           <p className="font-bold text-gray-900 text-sm border-b border-gray-200 pb-2 flex items-center gap-1.5">
             <Truck className="w-4 h-4 text-teal-700" />
-            <span>Thông tin đơn hàng & nhận thiết bị:</span>
+            <span>Thông tin đơn hàng & nhận thiết bị (#MD-{orderId}):</span>
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-700">
             <p>Người nhận: <strong className="text-gray-900">{formData.recipientName}</strong></p>
@@ -157,8 +208,36 @@ export const CartPage = () => {
             </strong>
           </p>
           <p className="text-gray-700">
+            Tình trạng thanh toán: <strong className="text-amber-700 font-bold">Chưa thanh toán (Chờ xác nhận)</strong>
+          </p>
+          <p className="text-gray-700">
             Giá thành: <strong className="text-emerald-700 font-black">Báo giá chiết khấu trực tiếp khi gọi xác nhận</strong>
           </p>
+        </div>
+
+        {/* Nút Tải File Báo Giá Excel và Xem Theo Dõi Đơn Hàng */}
+        <div className="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-200 max-w-lg mx-auto space-y-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="text-left">
+              <span className="font-bold text-emerald-900 text-xs block">Bảng Báo Giá Thiết Bị Y Tế (.xlsx)</span>
+              <span className="text-[11px] text-emerald-700">Tải về file Excel mẫu báo giá chính thức của đơn hàng</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleDownloadQuotation}
+              disabled={downloadingExcel || !createdOrder?.id}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl transition shadow-md cursor-pointer shrink-0 disabled:opacity-50"
+            >
+              {downloadingExcel ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                <>
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span>Tải Excel Báo Giá</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Nếu khách hàng chọn chuyển khoản QR thì hiện thông tin QR placeholder */}
@@ -190,7 +269,7 @@ export const CartPage = () => {
                   </button>
                 </div>
                 <p className="text-gray-600">Chủ tài khoản: <strong className="text-gray-900 uppercase">THIẾT BỊ Y TẾ KIM LIÊN</strong></p>
-                <p className="text-[11px] text-gray-500 italic">Nội dung chuyển khoản: <strong className="text-teal-800">DAT HANG {formData.phone}</strong></p>
+                <p className="text-[11px] text-gray-500 italic">Nội dung chuyển khoản: <strong className="text-teal-800">THANH TOAN DON {orderId} - {formData.phone}</strong></p>
               </div>
             </div>
             <p className="text-[11px] text-gray-500 pt-1">
@@ -201,16 +280,17 @@ export const CartPage = () => {
 
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <Link
-            to="/products"
-            className="px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-2xl text-xs transition shadow-md"
+            to={createdOrder ? `/orders?orderId=${createdOrder.id}&phone=${formData.phone}` : '/orders'}
+            className="px-6 py-3 bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-2xl text-xs transition shadow-md flex items-center gap-2"
           >
-            Tiếp tục xem thiết bị khác
+            <PackageCheck className="w-4 h-4" />
+            <span>Theo dõi tiến độ đơn hàng #MD-{orderId}</span>
           </Link>
           <Link
-            to="/orders"
+            to="/products"
             className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-2xl text-xs transition"
           >
-            Xem đơn hàng của tôi
+            Tiếp tục xem thiết bị khác
           </Link>
         </div>
       </div>

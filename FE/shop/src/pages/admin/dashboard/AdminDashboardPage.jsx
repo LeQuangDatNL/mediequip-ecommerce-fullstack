@@ -25,7 +25,6 @@ import {
   UploadCloud,
   FileText,
   FileSpreadsheet,
-  LayoutTemplate,
   Activity,
   ArrowRight,
   RefreshCw,
@@ -444,13 +443,6 @@ export const AdminDashboardPage = () => {
               </h3>
               <div className="grid grid-cols-2 gap-2 text-xs mt-2">
                 <Link
-                  to="/admin/banners"
-                  className="p-2.5 bg-white hover:bg-indigo-600 hover:text-white rounded-xl font-semibold text-gray-700 transition shadow-2xs flex items-center gap-2 group"
-                >
-                  <LayoutTemplate className="w-4 h-4 text-blue-600 group-hover:text-white shrink-0" />
-                  <span className="truncate">Banners</span>
-                </Link>
-                <Link
                   to="/admin/images"
                   className="p-2.5 bg-white hover:bg-indigo-600 hover:text-white rounded-xl font-semibold text-gray-700 transition shadow-2xs flex items-center gap-2 group"
                 >
@@ -459,10 +451,10 @@ export const AdminDashboardPage = () => {
                 </Link>
                 <Link
                   to="/admin/users"
-                  className="p-2.5 bg-white hover:bg-indigo-600 hover:text-white rounded-xl font-semibold text-gray-700 transition shadow-2xs flex items-center gap-2 group col-span-2"
+                  className="p-2.5 bg-white hover:bg-indigo-600 hover:text-white rounded-xl font-semibold text-gray-700 transition shadow-2xs flex items-center gap-2 group"
                 >
                   <Users className="w-4 h-4 text-sky-600 group-hover:text-white shrink-0" />
-                  <span className="truncate">Quản Lý Người Dùng</span>
+                  <span className="truncate">Người Dùng</span>
                 </Link>
               </div>
             </div>

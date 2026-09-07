@@ -4,7 +4,6 @@ import { useAuth } from '../hooks/useAuth';
 import {
   LayoutDashboard,
   FileSpreadsheet,
-  LayoutTemplate,
   Package,
   Layers,
   ShoppingBag,
@@ -64,7 +63,6 @@ export const AdminSidebar = ({ isCollapsed, toggleSidebar }) => {
   // 2. NHÓM QUẢN LÝ PHỤ & HỆ THỐNG (Các mục còn lại)
   const secondaryNavItems = [
     { to: '/admin', end: true, label: 'Tổng quan (Dashboard)', icon: LayoutDashboard },
-    { to: '/admin/banners', label: 'Quản lý Hero Banners', icon: LayoutTemplate },
     { to: '/admin/images', label: 'Thư viện Media & Ảnh', icon: ImageIcon },
     { to: '/admin/users', label: 'Quản lý Người dùng', icon: Users },
     { to: '/admin/statistics', label: 'Báo cáo & Thống kê', icon: BarChart3 },

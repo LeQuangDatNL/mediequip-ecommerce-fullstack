@@ -53,15 +53,11 @@ public class SecurityConfig {
                         .requestMatchers("/uploads/**").permitAll()
                         // Cho phép khách hàng gửi yêu cầu tư vấn / file báo giá công khai
                         .requestMatchers(HttpMethod.POST, "/api/consultations").permitAll()
-                        // Cho phép xem banner slider trang chủ công khai
-                        .requestMatchers(HttpMethod.GET, "/api/banners", "/api/banners/**").permitAll()
                         // Cho phép xem và gửi bình luận đánh giá sản phẩm
                         .requestMatchers(HttpMethod.GET, "/api/products/*/reviews").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/products/*/reviews").permitAll()
                         // Cho phép xem danh sách dữ liệu GET của các module quản lý
                         .requestMatchers(HttpMethod.GET,
-                                "/api/banners", "/api/banners/**",
-                                "/api/admin/banners", "/api/admin/banners/**",
                                 "/api/products", "/api/products/**",
                                 "/api/admin/products", "/api/admin/products/**",
                                 "/api/categories", "/api/categories/**",

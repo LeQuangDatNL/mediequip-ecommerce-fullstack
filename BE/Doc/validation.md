@@ -155,19 +155,6 @@ Tài liệu này định nghĩa chi tiết tất cả các quy tắc kiểm tra 
 | `description` | String | Không | Mô tả chi tiết sản phẩm | - |
 | `status` | Enum | Không | `ACTIVE` hoặc `INACTIVE` | - |
 
----
-
-### 9. Biểu Mẫu Quản Lý Banner Slider (`BannerRequest`)
-- **Endpoint**: `POST /api/admin/banners`, `PUT /api/admin/banners/{id}`
-
-| Tên trường | Kiểu dữ liệu | Bắt buộc | Ràng buộc kỹ thuật | Thông báo lỗi (Message) |
-| :--- | :--- | :---: | :--- | :--- |
-| `title` | String | Có | 2 - 150 ký tự | `Tiêu đề banner không được để trống` |
-| `imageUrl` | String | Có | Không rỗng, link hình ảnh | `Link ảnh banner không được để trống` |
-| `buttonText` | String | Không | Tên nút bấm chuyển hướng | - |
-| `buttonLink` | String | Không | Đường dẫn URL nút bấm | - |
-| `displayOrder` | Integer | Không | Thứ tự hiển thị | - |
-| `status` | Enum | Không | `ACTIVE` hoặc `INACTIVE` | - |
 
 ---
 

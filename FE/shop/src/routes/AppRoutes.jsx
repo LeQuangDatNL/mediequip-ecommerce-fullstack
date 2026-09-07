@@ -27,11 +27,6 @@ import ProfilePage from '../pages/customer/ProfilePage';
 // Pages - Admin Dashboard
 import AdminDashboardPage from '../pages/admin/dashboard/AdminDashboardPage';
 
-// Pages - Admin Hero Banners (Quản lý Banner Slider)
-import BannerIndex from '../pages/admin/banners/BannerIndex';
-import BannerCreate from '../pages/admin/banners/BannerCreate';
-import BannerUpdate from '../pages/admin/banners/BannerUpdate';
-
 // Pages - Admin Consultations (Quản lý yêu cầu tư vấn & file báo giá)
 import ConsultationIndex from '../pages/admin/consultations/ConsultationIndex';
 
@@ -104,11 +99,6 @@ export const AppRoutes = () => {
       <Route element={<AdminRoute />}>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboardPage />} />
-
-          {/* Module: Quản lý Hero Banners (Banner Slider Trang chủ) */}
-          <Route path="banners" element={<BannerIndex />} />
-          <Route path="banners/create" element={<BannerCreate />} />
-          <Route path="banners/update/:id" element={<BannerUpdate />} />
 
           {/* Module: Yêu Cầu Báo Giá & Tư Vấn (File Excel/PDF) */}
           <Route path="consultations" element={<ConsultationIndex />} />

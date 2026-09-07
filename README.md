@@ -52,7 +52,7 @@
   - Nhập hàng loạt sản phẩm bằng file Excel `.xlsx` chuẩn 2 sheet (dữ liệu + danh mục tham khảo).
 - **Quản lý đơn hàng**: Theo dõi trạng thái đơn hàng (Chờ duyệt, Đang xử lý, Đang giao, Hoàn thành, Hủy).
 - **Quản lý yêu cầu báo giá & Tư vấn**: Xem chi tiết thông tin khách hàng và tải file danh mục thiết bị đính kèm.
-- **Menu quản trị thu gọn (Collapsible)**: Phân nhóm Quản lý chính (Báo giá, Sản phẩm, Danh mục, Đơn hàng) và Quản lý phụ (Người dùng, Banners, Đánh giá, Media Gallery).
+- **Menu quản trị thu gọn (Collapsible)**: Phân nhóm Quản lý chính (Báo giá, Sản phẩm, Danh mục, Đơn hàng) và Quản lý phụ (Người dùng, Đánh giá, Media Gallery).
 
 ---
 

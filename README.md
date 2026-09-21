@@ -7,11 +7,12 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Google Gemini AI](https://img.shields.io/badge/Google_Gemini-2.5_Flash-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white)](https://ai.google.dev/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
 **Hệ thống giải pháp thương mại điện tử chuyên cung cấp, phân phối và báo giá thiết bị y tế chính hãng cho Bệnh viện, Phòng khám & Gia đình.**
 
-[🌐 Khám phá tính năng](#-tính-năng-nổi-bật) • [🛠️ Công nghệ](#-công-nghệ-sử-dụng) • [📁 Cấu trúc thư mục](#-cấu-trúc-thư-mục-dự-án) • [🚀 Triển khai Docker](#-triển-khai-nhanh-với-docker-khuyên-dùng) • [📖 Tài liệu API](#-tài-liệu-api--swagger-ui)
+[🌐 Khám phá tính năng](#-tính-năng-nổi-bật) • [🛠️ Công nghệ](#-công-nghệ-sử-dụng) • [📁 Cấu trúc thư mục](#-cấu-trúc-thư-mục-dự-án) • [🚀 Triển khai Docker](#-triển-khai-nhanh-với-docker-khuyên-dùng) • [💻 Hướng dẫn lập trình viên](#-chạy-môi-trường-phát-triển-cục-bộ-local-development) • [📖 Tài liệu API](#-tài-liệu-api--swagger-ui)
 
 </div>
 
@@ -19,40 +20,44 @@
 
 ## 📑 Mục lục
 - [✨ Tính năng nổi bật](#-tính-năng-nổi-bật)
+  - [🤖 Trợ lý AI & Báo giá Y tế](#-trợ-lý-ai--báo-giá-y-tế)
   - [🛍️ Dành cho Khách hàng & Phòng khám](#-dành-cho-khách-hàng--phòng-khám)
   - [🛡️ Dành cho Quản trị viên (Admin)](#-dành-cho-quản-trị-viên-admin)
 - [🛠️ Công nghệ sử dụng](#-công-nghệ-sử-dụng)
 - [📁 Cấu trúc thư mục dự án](#-cấu-trúc-thư-mục-dự-án)
 - [🚀 Triển khai nhanh với Docker (Khuyên dùng)](#-triển-khai-nhanh-với-docker-khuyên-dùng)
-- [💻 Chạy môi trường phát triển cục bộ (Local Development)](#-chạy-môi-trường-phát-triển-cục-bộ-local-development)
+- [💻 Hướng dẫn cho Lập trình viên (Local Development)](#-chạy-môi-trường-phát-triển-cục-bộ-local-development)
   - [1. Cấu hình Database MySQL](#1-cơ-sở-dữ-liệu-mysql)
   - [2. Khởi chạy Backend Spring Boot](#2-khởi-chạy-backend-spring-boot)
   - [3. Khởi chạy Frontend React Vite](#3-khởi-chạy-frontend-react--vite)
 - [📖 Tài liệu API & Swagger UI](#-tài-liệu-api--swagger-ui)
 - [🔑 Tài khoản mẫu đăng nhập](#-tài-khoản-mẫu-đăng-nhập)
-- [👨‍💻 Tác giả & Thiết kế](#-tác-giả--thiết-kế)
+- [👨‍💻 Tác giả & Liên hệ](#-tác-giả--liên-hệ)
 
 ---
 
 ## ✨ Tính năng nổi bật
 
+### 🤖 Trợ lý AI & Báo giá Y tế
+- **Trợ lý Bot Chat AI (Google Gemini 2.5 Flash)**: Widget chat nổi hỗ trợ tư vấn tức thì 24/7 về cấu hình máy, thông số kỹ thuật, hướng dẫn sử dụng và giải đáp thắc mắc chuyên môn y tế.
+- **Tải file biểu mẫu Excel Báo giá 1-Click**: Tích hợp sẵn template Excel yêu cầu báo giá chuẩn y tế (`.xlsx`) kèm xuất PDF/Excel danh mục dự án.
+- **Form Validation Chuyên Nghiệp**: Áp dụng bộ đôi `react-hook-form` + `zod` bắt lỗi realtime, giao diện cảnh báo trực quan cho biểu mẫu Đăng ký, Đăng nhập và Yêu cầu tư vấn.
+
 ### 🛍️ Dành cho Khách hàng & Phòng khám
-- **Trang chủ y tế chuyên nghiệp**: Hero banner giới thiệu thiết bị, tìm kiếm nhanh theo chuyên khoa, cam kết chất lượng CO/CQ, quy trình 5 bước minh bạch và danh mục hỏi đáp (FAQ).
-- **Phân loại & Bộ lọc đa tiêu chí**: Tra cứu thiết bị theo chuyên khoa (Chẩn đoán hình ảnh, Phòng mổ, Hồi sức cấp cứu, Xét nghiệm, Phục hồi chức năng...). Phân trang chuẩn 12 sản phẩm/trang.
-- **Chi tiết sản phẩm & Bộ sưu tập ảnh**: Xem đa ảnh chi tiết, tài liệu kỹ thuật, tự động gắn ảnh mặc định chất lượng cao (`no-image.svg`) khi thiếu ảnh.
-- **Giỏ hàng & Chế độ Báo giá ưu đãi**: Ẩn giá cố định, chuyển sang chế độ chiết khấu dự án, hỗ trợ đặt hàng nhanh kèm phương thức thanh toán tiền mặt (COD) và mã QR Ngân hàng / ZaloPay.
-- **Tư vấn & Gửi file báo giá Excel**: Tiếp nhận file danh mục thiết bị (`.xlsx`, `.docx`, `.pdf`) trực tiếp trên web, cung cấp file mẫu Excel chuẩn UTF-8 BOM tải về một click.
-- **Bản đồ định vị cửa hàng (Leaflet Map)**: Tích hợp chọn địa chỉ giao hàng trực quan trên bản đồ OpenStreetMap.
-- **Quản lý tài khoản & Danh sách yêu thích**: Đăng ký, đăng nhập bảo mật JWT, lưu sản phẩm yêu thích (Wishlist) và quản lý sổ địa chỉ giao nhận.
+- **Trang chủ y tế chuẩn hóa**: Hero banner giới thiệu thiết bị, tìm kiếm thông minh theo chuyên khoa, cam kết CO/CQ, quy trình 5 bước minh bạch.
+- **Phân loại & Bộ lọc đa tiêu chí**: Tra cứu thiết bị theo chuyên khoa (Chẩn đoán hình ảnh, Phòng mổ, Hồi sức cấp cứu, Xét nghiệm, Phục hồi chức năng, Xuất xứ quốc gia...).
+- **Chi tiết sản phẩm & Bộ sưu tập ảnh**: Xem đa ảnh chi tiết, tài liệu kỹ thuật, tự động fallback ảnh chuẩn (`no-image.svg`).
+- **Giỏ hàng & Đặt hàng báo giá**: Chiết khấu dự án linh hoạt, hỗ trợ thanh toán tiền mặt (COD) và mã QR Ngân hàng / ZaloPay.
+- **Bản đồ định vị cửa hàng (Leaflet Map)**: Tích hợp định vị GPS và chọn địa chỉ giao nhận trực quan trên OpenStreetMap.
+- **Quản lý tài khoản & Yêu thích**: Đăng ký, đăng nhập bảo mật JWT, lưu Wishlist, theo dõi tiến độ đơn hàng và lịch sử yêu cầu báo cáo.
 
 ### 🛡️ Dành cho Quản trị viên (Admin)
-- **Bảng điều khiển (Dashboard)**: Thống kê doanh thu, đơn hàng, người dùng và sản phẩm theo thời gian thực.
+- **Bảng điều khiển (Dashboard)**: Thống kê doanh thu, đơn hàng, khách hàng và thiết bị theo thời gian thực.
 - **Quản lý sản phẩm & Bulk Import Excel**:
-  - Thêm, sửa, xóa, quản lý gallery ảnh phụ chi tiết.
+  - CRUD sản phẩm, phân loại danh mục, quốc gia xuất xứ (Origin).
   - Nhập hàng loạt sản phẩm bằng file Excel `.xlsx` chuẩn 2 sheet (dữ liệu + danh mục tham khảo).
-- **Quản lý đơn hàng**: Theo dõi trạng thái đơn hàng (Chờ duyệt, Đang xử lý, Đang giao, Hoàn thành, Hủy).
-- **Quản lý yêu cầu báo giá & Tư vấn**: Xem chi tiết thông tin khách hàng và tải file danh mục thiết bị đính kèm.
-- **Menu quản trị thu gọn (Collapsible)**: Phân nhóm Quản lý chính (Báo giá, Sản phẩm, Danh mục, Đơn hàng) và Quản lý phụ (Người dùng, Đánh giá, Media Gallery).
+- **Quản lý đơn hàng & Báo giá**: Theo dõi trạng thái đơn hàng (Chờ duyệt, Đang xử lý, Đang giao, Hoàn thành, Hủy), duyệt yêu cầu tư vấn và xem file đính kèm.
+- **Quản lý đánh giá (Reviews) & Xuất xứ (Origins)**: Kiểm duyệt phản hồi khách hàng, quản lý danh sách xuất xứ thiết bị y tế (Đức, Nhật Bản, Mỹ, Hàn Quốc, Việt Nam...).
 
 ---
 
@@ -60,20 +65,22 @@
 
 | Phân hệ | Công nghệ / Thư viện | Vai trò |
 |---|---|---|
-| **Backend** | **Java 21**, **Spring Boot 3.x / 4.x** | RESTful API Server độc lập |
-| | **Spring Security 6** + **JWT** | Xác thực Stateless Token & Phân quyền RBAC |
-| | **Spring Data JPA** / **Hibernate** | Tương tác cơ sở dữ liệu ORM |
-| | **MySQL 8.0** | Cơ sở dữ liệu quan hệ |
-| | **Apache POI 5.3.0** | Đọc/Ghi & Xử lý file Excel `.xlsx` |
-| | **Spring Mail (Gmail SMTP)** | Gửi email thông báo tự động |
-| | **SpringDoc OpenAPI / Swagger 3** | Tự động sinh tài liệu API trực quan |
-| **Frontend** | **React 19**, **Vite** | Xây dựng giao diện Single Page Application (SPA) |
-| | **Tailwind CSS v4** | Giao diện y tế hiện đại, responsive |
-| | **Redux Toolkit** | Quản lý state toàn cục (Cart, Auth, Wishlist) |
-| | **React Router DOM v7** | Điều hướng client-side routing |
+| **Backend** | **Java 21**, **Spring Boot 3.x / 4.x** | RESTful API Server độc lập, hiệu năng cao |
+| | **Spring Security 6** + **JWT (jjwt)** | Xác thực Stateless Token & Phân quyền RBAC (ADMIN / CUSTOMER) |
+| | **Spring Data JPA** / **Hibernate** | ORM tương tác cơ sở dữ liệu quan hệ |
+| | **MySQL 8.0** | Cơ sở dữ liệu lưu trữ chính |
+| | **Apache POI 5.3.0** | Đọc, ghi & xử lý file Excel `.xlsx` báo giá và bulk import |
+| | **Spring Mail (Gmail SMTP)** | Gửi email thông báo tự động khi có yêu cầu mới |
+| | **SpringDoc OpenAPI / Swagger 3** | Tự động sinh tài liệu RESTful API trực quan |
+| **Frontend** | **React 19**, **Vite** | Nền tảng Single Page Application (SPA) tốc độ cao |
+| | **Tailwind CSS v4** | Hệ thống style y tế hiện đại, responsive hoàn toàn |
+| | **React Hook Form** + **Zod** | Validation form hiệu năng cao, schema-based type-safe |
+| | **Google Gemini AI SDK** | Tích hợp Bot chat AI tư vấn thiết bị y tế |
+| | **Redux Toolkit** / React Context | Quản lý state toàn cục (Cart, Auth, Wishlist) |
+| | **React Router DOM v7** | Quản lý định tuyến SPA |
 | | **Axios** | HTTP Client kết nối API Backend |
 | | **Lucide React** | Bộ icon giao diện hiện đại |
-| | **Leaflet** & **React-Leaflet** | Bản đồ định vị GPS & chọn địa chỉ |
+| | **Leaflet** & **React-Leaflet** | Bản đồ tương tác & chọn vị trí giao hàng |
 | **DevOps** | **Docker**, **Docker Compose** | Container hóa trọn gói hệ thống (MySQL + BE + FE) |
 | | **Nginx (Alpine)** | Web Server phục vụ SPA & Reverse Proxy |
 
@@ -90,33 +97,38 @@ WebBanHang/
 │   └── shop/
 │       ├── src/main/java/com/shop/    # Source code Java (Controller, Service, Entity, DTO, Security)
 │       ├── src/main/resources/        # application.properties (Cấu hình an toàn biến môi trường)
+│       │   ├── application.properties
+│       │   └── application-dev.properties.example # Mẫu cấu hình local
 │       ├── pom.xml                    # Quản lý thư viện Maven
 │       ├── Dockerfile                 # Multi-stage Dockerfile cho Backend
 │       └── .dockerignore
 │
 ├── FE/                                # Mã nguồn Frontend (React + Vite)
 │   └── shop/
-│       ├── public/                    # Tài nguyên tĩnh (no-image.svg, favicon)
+│       ├── public/                    # Tài nguyên tĩnh (no-image.svg, Excel template)
 │       ├── src/
 │       │   ├── assets/                # Hình ảnh y tế, banner, icons
-│       │   ├── components/            # UI Components (Header, Footer, MapPicker, FloatingContact,...)
+│       │   ├── components/            # UI Components (Header, Footer, FloatingChatWidget,...)
 │       │   ├── contexts/              # React Contexts (CartContext, WishlistContext)
 │       │   ├── hooks/                 # Custom React Hooks (useAuth)
 │       │   ├── pages/                 # Giao diện Khách hàng & Giao diện Admin
-│       │   ├── services/              # Axios API clients & endpoints
-│       │   └── utils/                 # Tiện ích (imageHelper, quoteTemplateExport)
+│       │   ├── services/              # Axios API clients (aiChatService, productService,...)
+│       │   └── utils/                 # Tiện ích (validationSchemas, quoteExport)
+│       ├── .env.example               # Mẫu biến môi trường Frontend
 │       ├── nginx.conf                 # Cấu hình Nginx reverse proxy cho Frontend
 │       ├── Dockerfile                 # Multi-stage Dockerfile cho Frontend
 │       ├── package.json               # Danh sách thư viện Node.js
 │       └── .dockerignore
 │
 ├── Database/                          # Kịch bản cơ sở dữ liệu MySQL
-│   ├── create.md                      # Cấu trúc bảng (DDL SQL)
-│   └── data.md                        # Dữ liệu mẫu khởi tạo (DML SQL)
+│   ├── schema.sql                     # Cấu trúc bảng (DDL SQL)
+│   ├── data.sql                       # Dữ liệu mẫu khởi tạo (DML SQL)
+│   ├── create.md                      # Tài liệu mô tả lược đồ CSDL
+│   └── data.md                        # Tài liệu mô tả dữ liệu mẫu
 │
-├── .env.example                       # Mẫu biến môi trường an toàn (Không lộ mật khẩu)
+├── .env.example                       # Mẫu biến môi trường an toàn trọn gói
 ├── docker-compose.yml                 # Khởi chạy toàn bộ hệ thống (MySQL + BE + FE)
-├── .gitignore                         # Bộ lọc tệp tin Git chuẩn
+├── .gitignore                         # Bộ lọc tệp tin Git chuẩn (bảo mật tuyệt đối)
 └── README.md                          # Tài liệu hướng dẫn dự án
 ```
 
@@ -140,7 +152,7 @@ Dự án đã được đóng gói sẵn sàng với `docker-compose.yml` gồm 
 2. **Cấu hình biến môi trường (Tùy chọn)**:
    ```bash
    cp .env.example .env
-   # Chỉnh sửa file .env nếu bạn muốn thay đổi mật khẩu Database hoặc cấu hình Mail
+   # Chỉnh sửa file .env nếu bạn muốn thay đổi mật khẩu Database, Gemini API Key hoặc cấu hình Mail
    ```
 
 3. **Khởi chạy toàn bộ hệ thống với 1 lệnh**:
@@ -160,43 +172,63 @@ Dự án đã được đóng gói sẵn sàng với `docker-compose.yml` gồm 
 
 ---
 
-## 💻 Chạy môi trường phát triển cục bộ (Local Development)
+## 💻 Hướng dẫn cho Lập trình viên (Local Development)
 
-### 1. Cơ sở dữ liệu (MySQL)
-- Cài đặt MySQL 8.0 và tạo database:
-  ```sql
-  CREATE DATABASE ecommerce_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-  ```
-- Nạp cấu trúc bảng và dữ liệu mẫu từ thư mục `Database/` hoặc để Spring Boot JPA tự động sinh bảng (`ddl-auto=update`).
+Dành cho các thành viên trong nhóm hoặc nhà phát triển muốn clone về để tiếp tục code và mở rộng tính năng:
+
+### 1. Cơ sở dữ liệu (MySQL 8.0+)
+1. Mở MySQL Client / Workbench / DBeaver và tạo Database:
+   ```sql
+   CREATE DATABASE ecommerce_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
+2. Chạy file cấu trúc bảng và nạp dữ liệu mẫu:
+   - File cấu trúc bảng: `Database/schema.sql`
+   - File dữ liệu mẫu: `Database/data.sql`
+
+*(Hoặc dùng lệnh terminal:* `mysql -u root -p ecommerce_db < Database/schema.sql` *rồi* `mysql -u root -p ecommerce_db < Database/data.sql`*)*
 
 ### 2. Khởi chạy Backend (Spring Boot)
-- Di chuyển vào thư mục Backend:
-  ```bash
-  cd BE/shop
-  ```
-- Cung cấp mật khẩu MySQL qua biến môi trường hoặc chạy lệnh:
-  ```bash
-  # Trên Windows (PowerShell/CMD):
-  mvn spring-boot:run
-  # Hoặc với Maven Wrapper:
-  .\mvnw spring-boot:run
-  ```
-- Backend sẽ hoạt động tại: `http://localhost:8080`
+1. Di chuyển vào thư mục Backend:
+   ```bash
+   cd BE/shop
+   ```
+2. Tạo file cấu hình dev cá nhân:
+   ```bash
+   cp src/main/resources/application-dev.properties.example src/main/resources/application-dev.properties
+   ```
+   *Mở file `application-dev.properties` và điền mật khẩu MySQL cục bộ của bạn (`spring.datasource.password=...`). File này đã nằm trong `.gitignore` nên an toàn tuyệt đối.*
+
+3. Khởi chạy ứng dụng:
+   ```bash
+   # Dùng Maven Wrapper (Khuyên dùng, không cần cài trước Maven)
+   # Trên Windows:
+   .\mvnw.cmd spring-boot:run
+   # Trên Linux/macOS:
+   ./mvnw spring-boot:run
+   ```
+   Backend sẽ hoạt động tại: **`http://localhost:8080`**
 
 ### 3. Khởi chạy Frontend (React + Vite)
-- Mở terminal tại thư mục Frontend:
-  ```bash
-  cd FE/shop
-  ```
-- Cài đặt các thư viện:
-  ```bash
-  npm install
-  ```
-- Chạy Development Server:
-  ```bash
-  npm run dev
-  ```
-- Frontend sẽ hoạt động tại: `http://localhost:5173`
+1. Mở terminal tại thư mục Frontend:
+   ```bash
+   cd FE/shop
+   ```
+2. Tạo file biến môi trường:
+   ```bash
+   cp .env.example .env
+   ```
+   *(Điền `VITE_GEMINI_API_KEY` nếu bạn muốn test tính năng Bot Chat AI với API Key riêng của mình).*
+
+3. Cài đặt các thư viện Node.js:
+   ```bash
+   npm install
+   ```
+
+4. Khởi chạy Development Server:
+   ```bash
+   npm run dev
+   ```
+   Frontend sẽ hoạt động tại: **`http://localhost:5173`**
 
 ---
 
@@ -204,10 +236,10 @@ Dự án đã được đóng gói sẵn sàng với `docker-compose.yml` gồm 
 
 Backend tích hợp sẵn giao diện Swagger UI OpenAPI 3.0:
 
-- **Swagger UI**: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
-- **OpenAPI JSON**: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+- **Swagger UI Trực quan**: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+- **OpenAPI JSON Spec**: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
 
-> **Mẹo**: Sau khi đăng nhập, bạn có thể bấm nút **Authorize** ở góc phải Swagger UI và nhập JWT Token (`Bearer <token>`) để kiểm thử các API bảo vệ quyền Admin hoặc User.
+> **Mẹo kiểm thử API bảo mật**: Sau khi đăng nhập qua API `/api/auth/login`, sao chép JWT token, bấm nút **Authorize** ở góc phải Swagger UI và nhập `Bearer <token>` để kiểm thử các API quyền Admin hoặc User.
 
 ---
 
@@ -215,19 +247,19 @@ Backend tích hợp sẵn giao diện Swagger UI OpenAPI 3.0:
 
 | Quyền hạn | Tên đăng nhập / Email | Mật khẩu mặc định | Phạm vi quyền hạn |
 |---|---|---|---|
-|  **Quản trị viên (Admin)** | `admin` / `admin@shop.vn` | `123456` | Toàn quyền quản trị: Dashboard, Sản phẩm, Excel Import, Đơn hàng, Yêu cầu báo giá |
-| 👤 **Khách hàng (User)** | `nguyenvana` / `nguyenvana@gmail.com` | `123456` | Mua sắm thiết bị, giỏ hàng, gửi đơn báo giá, theo dõi đơn cá nhân, lưu yêu thích |
+| 👑 **Quản trị viên (Admin)** | `admin` / `admin@shop.vn` | `123456` | Toàn quyền: Dashboard, Quản lý sản phẩm, Xuất xứ, Nhập Excel, Đơn hàng, Đánh giá, Yêu cầu báo giá |
+| 👤 **Khách hàng (User)** | `nguyenvana` / `nguyenvana@gmail.com` | `123456` | Mua sắm, giỏ hàng, gửi đơn báo giá, chat AI, theo dõi báo cáo cá nhân, Wishlist |
 
 ---
 
-## 👨‍💻 Tác giả & Thiết kế
+## 👨‍💻 Tác giả & Liên hệ
 
-- **Người phát triển & Thiết kế**: [Lê Quang Đạt (@LeQuangDat)](https://github.com/LeQuangDatNL)
-- **Email hỗ trợ**: [lienkehoach@gmail.com](mailto:lienkehoach@gmail.com)
-- **Hotline & Zalo tư vấn**: **0914 066 662**
+- **Người phát triển & Thiết kế**: [Lê Quang Đạt (@LeQuangDatNL)](https://github.com/LeQuangDatNL)
+- **Email liên hệ**: [lienkehoach@gmail.com](mailto:lienkehoach@gmail.com)
+- **Hotline & Zalo**: **0914 066 662**
 - **Facebook**: [Facebook Kim Liên](https://www.facebook.com/kim.lien.ngo.304193)
 
 ---
 
 ## 📜 Giấy phép
-Dự án được xây dựng và phát triển phục vụ mục đích học tập và giải pháp thương mại điện tử thực tế. Mọi đóng góp (Pull Request) đều được hoan nghênh!
+Dự án được xây dựng và phát triển phục vụ mục đích thương mại điện tử thực tế và học tập. Mọi đóng góp (Pull Request) đều được hoan nghênh!

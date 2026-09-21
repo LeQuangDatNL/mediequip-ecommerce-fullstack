@@ -32,7 +32,6 @@
   - [3. Khởi chạy Frontend React Vite](#3-khởi-chạy-frontend-react--vite)
 - [📖 Tài liệu API & Swagger UI](#-tài-liệu-api--swagger-ui)
 - [🔑 Tài khoản mẫu đăng nhập](#-tài-khoản-mẫu-đăng-nhập)
-- [👨‍💻 Tác giả & Liên hệ](#-tác-giả--liên-hệ)
 
 ---
 
@@ -249,17 +248,3 @@ Backend tích hợp sẵn giao diện Swagger UI OpenAPI 3.0:
 |---|---|---|---|
 | 👑 **Quản trị viên (Admin)** | `admin` / `admin@shop.vn` | `123456` | Toàn quyền: Dashboard, Quản lý sản phẩm, Xuất xứ, Nhập Excel, Đơn hàng, Đánh giá, Yêu cầu báo giá |
 | 👤 **Khách hàng (User)** | `nguyenvana` / `nguyenvana@gmail.com` | `123456` | Mua sắm, giỏ hàng, gửi đơn báo giá, chat AI, theo dõi báo cáo cá nhân, Wishlist |
-
----
-
-## 👨‍💻 Tác giả & Liên hệ
-
-- **Người phát triển & Thiết kế**: [Lê Quang Đạt (@LeQuangDatNL)](https://github.com/LeQuangDatNL)
-- **Email liên hệ**: [lienkehoach@gmail.com](mailto:lienkehoach@gmail.com)
-- **Hotline & Zalo**: **0914 066 662**
-- **Facebook**: [Facebook Kim Liên](https://www.facebook.com/kim.lien.ngo.304193)
-
----
-
-## 📜 Giấy phép
-Dự án được xây dựng và phát triển phục vụ mục đích thương mại điện tử thực tế và học tập. Mọi đóng góp (Pull Request) đều được hoan nghênh!

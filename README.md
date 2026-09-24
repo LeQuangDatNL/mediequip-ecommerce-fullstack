@@ -32,6 +32,7 @@
   - [3. Khởi chạy Frontend React Vite](#3-khởi-chạy-frontend-react--vite)
 - [📖 Tài liệu API & Swagger UI](#-tài-liệu-api--swagger-ui)
 - [🔑 Tài khoản mẫu đăng nhập](#-tài-khoản-mẫu-đăng-nhập)
+- [👨‍💻 Tác giả & Liên hệ](#-tác-giả--liên-hệ)
 
 ---
 

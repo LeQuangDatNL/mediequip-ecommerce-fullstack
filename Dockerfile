@@ -5,11 +5,11 @@ FROM maven:3.9.9-eclipse-temurin-21-alpine AS builder
 WORKDIR /build
 
 # Sao chép pom.xml và tải dependencies (tối ưu cache Docker layer)
-COPY pom.xml .
+COPY BE/shop/pom.xml .
 RUN mvn dependency:go-offline -B
 
 # Sao chép toàn bộ mã nguồn Backend và đóng gói file JAR
-COPY src ./src
+COPY BE/shop/src ./src
 RUN mvn clean package -DskipTests
 
 # ===================================================================

@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -22,6 +21,39 @@ public class EmailService {
 
     @Value("${app.admin.notification-email:kimlienmedical@gmail.com}")
     private String adminNotificationEmail;
+
+    /**
+     * Gửi mã xác thực OTP qua Gmail khi đăng ký tài khoản
+     */
+    public boolean sendRegistrationOtp(String toEmail, String otpCode) {
+        if (mailSender == null || fromEmail == null || fromEmail.trim().isEmpty()) {
+            logger.info("Chưa cấu hình thông số SMTP Gmail (spring.mail.username). Mã OTP đăng ký của {} là: [{}]", toEmail, otpCode);
+            return false;
+        }
+
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setFrom(fromEmail);
+            msg.setTo(toEmail);
+            msg.setSubject("[Thiết Bị Y Tế Kim Liên] Mã xác thực đăng ký tài khoản");
+            msg.setText(
+                "Xin chào,\n\n" +
+                "Cảm ơn bạn đã đăng ký tài khoản tại Hệ Thống Thiết Bị Y Tế Kim Liên.\n\n" +
+                "Mã xác thực (OTP) của bạn là: " + otpCode + "\n\n" +
+                "Mã này có hiệu lực trong vòng 5 phút. Vui lòng không chia sẻ mã này cho bất kỳ ai để bảo mật tài khoản.\n\n" +
+                "Trân trọng,\n" +
+                "Trung Tâm Phân Phối Thiết Bị Y Tế Kim Liên\n" +
+                "Hotline: 0914 066 662\n" +
+                "Địa chỉ: 7/54 Dương Thiệu Tước, Phường Tân Quý, Quận Tân Phú, TP.HCM"
+            );
+            mailSender.send(msg);
+            logger.info("Đã gửi mã OTP đăng ký thành công tới email: {}", toEmail);
+            return true;
+        } catch (Exception e) {
+            logger.warn("Không thể gửi email OTP qua SMTP: {}. Mã OTP test là: [{}]", e.getMessage(), otpCode);
+            return false;
+        }
+    }
 
     /**
      * Gửi email xác nhận tiếp nhận yêu cầu cho khách hàng và thông báo cho Admin
@@ -50,8 +82,8 @@ public class EmailService {
                     "Đội ngũ Dược sĩ & Chuyên viên y tế sẽ liên hệ lại bạn qua số điện thoại " + consultation.getPhone() + " trong vòng 15-30 phút.\n\n" +
                     "Trân trọng,\n" +
                     "Trung Tâm Phân Phối Thiết Bị Y Tế Kim Liên\n" +
-                    "Hotline: 1900 1234 | 0901 000 001\n" +
-                    "Địa chỉ: Số 18, Ngõ 86 Phố Duy Tân, Cầu Giấy, Hà Nội"
+                    "Hotline: 0914 066 662\n" +
+                    "Địa chỉ: 7/54 Dương Thiệu Tước, Phường Tân Quý, Quận Tân Phú, TP.HCM"
                 );
                 mailSender.send(customerMsg);
                 logger.info("Đã gửi email xác nhận thành công tới khách hàng: {}", consultation.getEmail());
@@ -81,4 +113,3 @@ public class EmailService {
         }
     }
 }
-

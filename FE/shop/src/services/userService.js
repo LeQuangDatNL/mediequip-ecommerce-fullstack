@@ -1,6 +1,26 @@
 import apiClient from './apiClient';
 
 export const userService = {
+  // ================= DÀNH CHO NGƯỜI DÙNG HIỆN TẠI (ME) =================
+  // Lấy thông tin tài khoản cá nhân
+  getMyProfile: async () => {
+    const response = await apiClient.get('/api/users/me');
+    return response.data;
+  },
+
+  // Cập nhật thông tin cá nhân (Họ tên, Email, Số điện thoại)
+  updateMyProfile: async (data) => {
+    const response = await apiClient.put('/api/users/me', data);
+    return response.data;
+  },
+
+  // Đổi mật khẩu cá nhân
+  changePassword: async (data) => {
+    const response = await apiClient.put('/api/users/me/password', data);
+    return response.data;
+  },
+
+  // ================= DÀNH CHO ADMIN =================
   // Lấy danh sách người dùng có phân trang và tìm kiếm
   getUsers: async (page = 0, keyword = '') => {
     const params = { page };
@@ -37,4 +57,3 @@ export const userService = {
 };
 
 export default userService;
-

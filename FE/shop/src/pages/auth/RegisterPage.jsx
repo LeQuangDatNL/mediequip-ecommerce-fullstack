@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema } from '../../utils/validationSchemas';
 import { useAuth } from '../../hooks/useAuth';
+import authService from '../../services/authService';
 import {
   UserPlus,
   User,
@@ -16,7 +17,10 @@ import {
   CheckCircle2,
   AlertCircle,
   Stethoscope,
-  ShieldCheck
+  ShieldCheck,
+  Send,
+  KeyRound,
+  Clock
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -25,6 +29,11 @@ export const RegisterPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState('');
+
+  // Email OTP state
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   const { register: authRegister } = useAuth();
   const navigate = useNavigate();
@@ -38,7 +47,7 @@ export const RegisterPage = () => {
     formState: { errors, touchedFields },
   } = useForm({
     resolver: zodResolver(registerSchema),
-    mode: 'onTouched', // Validate tự động khi blur và khi gõ
+    mode: 'onTouched',
     defaultValues: {
       fullName: '',
       username: '',
@@ -46,256 +55,306 @@ export const RegisterPage = () => {
       phone: '',
       password: '',
       confirmPassword: '',
+      otp: '',
     },
   });
 
+  const emailValue = watch('email', '');
   const passwordValue = watch('password', '');
   const confirmPasswordValue = watch('confirmPassword', '');
-  const fullNameValue = watch('fullName', '');
-  const usernameValue = watch('username', '');
-  const emailValue = watch('email', '');
-  const phoneValue = watch('phone', '');
 
-  // Xử lý submit form
-  const onSubmit = async (data) => {
-    setServerError('');
-    setLoading(true);
+  // Bộ đếm thời gian gửi lại OTP (Countdown timer)
+  useEffect(() => {
+    let timer;
+    if (countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [countdown]);
 
+  // Gửi mã OTP xác thực qua Email
+  const handleSendOtp = async () => {
+    if (!emailValue || !emailValue.includes('@')) {
+      toast.error('Vui lòng nhập địa chỉ Email hợp lệ trước khi nhận mã OTP');
+      return;
+    }
+
+    setSendingOtp(true);
     try {
-      const payload = {
-        fullName: data.fullName.trim(),
-        username: data.username.trim(),
-        email: data.email.trim(),
-        phone: data.phone?.trim() || null,
+      const res = await authService.sendRegisterOtp(emailValue);
+      setOtpSent(true);
+      setCountdown(45); // Cooldown 45 giây
+      toast.success(res?.message || 'Mã OTP đã được gửi đến email của bạn!');
+    } catch (err) {
+      console.error('Lỗi gửi OTP:', err);
+      const msg = err.response?.data?.message || 'Không thể gửi mã OTP qua email';
+      toast.error(msg);
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const onSubmit = async (data) => {
+    setLoading(true);
+    setServerError('');
+    try {
+      await authRegister({
+        fullName: data.fullName,
+        username: data.username,
+        email: data.email,
+        phone: data.phone || null,
         password: data.password,
-      };
+        otp: data.otp || null,
+      });
 
-      await authRegister(payload);
-      toast.success('Đăng ký tài khoản thành công! Vui lòng đăng nhập.');
-      navigate('/login');
-    } catch (error) {
-      const responseData = error.response?.data;
+      toast.success('🎉 Đăng ký tài khoản thành công! Đang chuyển hướng...');
+      setTimeout(() => {
+        navigate('/login', {
+          state: { message: 'Đăng ký thành công! Vui lòng đăng nhập.' },
+        });
+      }, 1200);
+    } catch (err) {
+      console.error('Lỗi đăng ký:', err);
 
-      // 1. Nếu Backend trả về danh sách fieldErrors
-      if (responseData?.fieldErrors && typeof responseData.fieldErrors === 'object') {
+      const status = err.response?.status;
+      const responseData = err.response?.data;
+      const message = responseData?.message || 'Đăng ký không thành công. Vui lòng thử lại!';
+
+      if (status === 409) {
+        if (message.toLowerCase().includes('tên đăng nhập') || message.toLowerCase().includes('username')) {
+          setError('username', { type: 'server', message: 'Tên đăng nhập này đã được sử dụng' });
+        } else if (message.toLowerCase().includes('email')) {
+          setError('email', { type: 'server', message: 'Email này đã được đăng ký tài khoản khác' });
+        } else {
+          setServerError(message);
+        }
+      } else if (status === 400 && responseData?.fieldErrors) {
         Object.entries(responseData.fieldErrors).forEach(([field, msg]) => {
           setError(field, { type: 'server', message: msg });
         });
-        const firstField = Object.keys(responseData.fieldErrors)[0];
-        toast.error(responseData.fieldErrors[firstField] || 'Vui lòng kiểm tra lại các trường thông tin');
       } else {
-        // 2. Lỗi thông báo chung từ server
-        const errorMsg =
-          responseData?.message ||
-          error.message ||
-          'Đăng ký thất bại. Tên đăng nhập hoặc email có thể đã tồn tại!';
-
-        setServerError(errorMsg);
-        toast.error(errorMsg);
-
-        if (errorMsg.toLowerCase().includes('tên đăng nhập') || errorMsg.toLowerCase().includes('username')) {
-          setError('username', { type: 'server', message: errorMsg });
-        } else if (errorMsg.toLowerCase().includes('email')) {
-          setError('email', { type: 'server', message: errorMsg });
-        } else if (errorMsg.toLowerCase().includes('số điện thoại') || errorMsg.toLowerCase().includes('phone')) {
-          setError('phone', { type: 'server', message: errorMsg });
-        }
+        setServerError(message);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // Helper hiển thị trạng thái viền của input
   const getInputClassName = (fieldName, val) => {
-    const isTouched = touchedFields[fieldName];
     const hasError = !!errors[fieldName];
-    const isValid = isTouched && !hasError && val && val.length > 0;
+    const isSuccess = touchedFields[fieldName] && !hasError && val && val.length > 0;
 
-    if (hasError) {
-      return 'w-full pl-10 pr-10 py-2.5 bg-red-50/40 border border-red-400 text-gray-900 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-500 transition';
-    }
-    if (isValid) {
-      return 'w-full pl-10 pr-10 py-2.5 bg-emerald-50/20 border border-emerald-300 text-gray-900 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-teal-200 focus:border-teal-600 transition';
-    }
-    return 'w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-teal-200 focus:border-teal-600 focus:bg-white transition';
+    return `w-full pl-10 pr-10 py-2.5 text-sm text-slate-800 placeholder-slate-400 bg-white border rounded-xl transition-all duration-200 outline-none ${
+      hasError
+        ? 'border-rose-400 focus:border-rose-500 focus:ring-3 focus:ring-rose-100 bg-rose-50/20'
+        : isSuccess
+        ? 'border-emerald-400 focus:border-emerald-500 focus:ring-3 focus:ring-emerald-100'
+        : 'border-slate-200 hover:border-slate-300 focus:border-teal-700 focus:ring-3 focus:ring-teal-100'
+    }`;
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8 select-none">
-      <div className="max-w-md w-full space-y-5">
-        {/* Header Logo & Title */}
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-800 to-emerald-600 text-white shadow-lg shadow-teal-700/20 mb-3">
-            <Stethoscope className="w-7 h-7 text-emerald-100" />
+    <div className="min-h-[calc(100vh-140px)] flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-50 via-teal-50/30 to-emerald-50/20">
+      <div className="max-w-xl w-full">
+        
+        {/* Card Đăng ký */}
+        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 p-8 sm:p-10 relative overflow-hidden">
+          
+          {/* Header Title */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-teal-800 text-white shadow-lg shadow-teal-800/30 mb-4 transform hover:scale-105 transition-transform duration-200">
+              <Stethoscope className="w-7 h-7" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              Đăng Ký Tài Khoản
+            </h1>
+            <p className="text-sm text-slate-500 mt-2 flex items-center justify-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 inline" />
+              <span>Hệ thống phân phối Thiết Bị Y Tế Kim Liên</span>
+            </p>
           </div>
-          <h2 className="text-2xl font-black text-gray-900 tracking-tight">
-            Tạo Tài Khoản Khách Hàng
-          </h2>
-          <p className="mt-1 text-xs text-gray-500">
-            MediEquip Vietnam • Thiết Bị Y Tế Kim Liên (7/54 Dương Thiệu Tước)
-          </p>
-        </div>
 
-        {/* Card Form */}
-        <div className="bg-white py-7 px-6 sm:px-8 border border-gray-100 rounded-3xl shadow-xl shadow-gray-200/50">
-          {/* Banner lỗi từ server nếu có */}
+          {/* Banner lỗi từ server */}
           {serverError && (
-            <div className="mb-4 p-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2 animate-in fade-in">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
-              <div className="flex-1 font-medium">{serverError}</div>
+            <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-3 text-rose-700 animate-shake">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-rose-500" />
+              <div className="text-sm leading-relaxed">{serverError}</div>
             </div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-3.5">
-            {/* 1. Họ và tên */}
+          {/* Form */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+            
+            {/* Họ và tên */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-gray-700">
-                  Họ và tên <span className="text-red-500">*</span>
-                </label>
-                {touchedFields.fullName && !errors.fullName && fullNameValue && (
-                  <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-0.5">
-                    <CheckCircle2 className="w-3 h-3" /> Hợp lệ
-                  </span>
-                )}
-              </div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                Họ và tên <span className="text-rose-500">*</span>
+              </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                  <User className="w-4 h-4 text-teal-700" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <User className="w-4 h-4" />
                 </div>
                 <input
                   type="text"
                   {...register('fullName')}
-                  placeholder="VD: Nguyễn Văn A"
-                  className={getInputClassName('fullName', fullNameValue)}
+                  placeholder="Ví dụ: Nguyễn Văn An"
+                  className={getInputClassName('fullName', watch('fullName'))}
                 />
-                {errors.fullName && (
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-red-500">
-                    <AlertCircle className="w-4 h-4" />
+                {touchedFields.fullName && !errors.fullName && watch('fullName') && (
+                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-emerald-500">
+                    <CheckCircle2 className="w-4 h-4" />
                   </div>
                 )}
               </div>
               {errors.fullName && (
-                <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center gap-1 animate-in fade-in">
+                <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3 shrink-0" /> {errors.fullName.message}
                 </p>
               )}
             </div>
 
-            {/* 2. Tên đăng nhập */}
+            {/* Tên đăng nhập */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-gray-700">
-                  Tên đăng nhập <span className="text-red-500">*</span>
-                </label>
-                {touchedFields.username && !errors.username && usernameValue && (
-                  <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-0.5">
-                    <CheckCircle2 className="w-3 h-3" /> Hợp lệ
-                  </span>
-                )}
-              </div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                Tên đăng nhập <span className="text-rose-500">*</span>
+              </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                  <ShieldCheck className="w-4 h-4 text-teal-700" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <span className="text-xs font-bold font-mono">@</span>
                 </div>
                 <input
                   type="text"
                   {...register('username')}
-                  placeholder="VD: nguyenvana (3-50 ký tự, không dấu)"
-                  className={getInputClassName('username', usernameValue)}
+                  placeholder="nguyenvana (3-50 ký tự không dấu)"
+                  className={getInputClassName('username', watch('username'))}
                 />
-                {errors.username && (
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-red-500">
-                    <AlertCircle className="w-4 h-4" />
+                {touchedFields.username && !errors.username && watch('username') && (
+                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-emerald-500">
+                    <CheckCircle2 className="w-4 h-4" />
                   </div>
                 )}
               </div>
               {errors.username && (
-                <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center gap-1 animate-in fade-in">
+                <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3 shrink-0" /> {errors.username.message}
                 </p>
               )}
             </div>
 
-            {/* 3. Email */}
+            {/* Email & Nút gửi OTP */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-gray-700">
-                  Địa chỉ Email <span className="text-red-500">*</span>
-                </label>
-                {touchedFields.email && !errors.email && emailValue && (
-                  <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-0.5">
-                    <CheckCircle2 className="w-3 h-3" /> Hợp lệ
-                  </span>
-                )}
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                  <Mail className="w-4 h-4 text-teal-700" />
-                </div>
-                <input
-                  type="email"
-                  {...register('email')}
-                  placeholder="VD: nguyenvana@gmail.com"
-                  className={getInputClassName('email', emailValue)}
-                />
-                {errors.email && (
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-red-500">
-                    <AlertCircle className="w-4 h-4" />
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                Địa chỉ Email <span className="text-rose-500">*</span>
+              </label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Mail className="w-4 h-4" />
                   </div>
-                )}
+                  <input
+                    type="email"
+                    {...register('email')}
+                    placeholder="email@example.com"
+                    className={getInputClassName('email', emailValue)}
+                  />
+                  {touchedFields.email && !errors.email && emailValue && (
+                    <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-emerald-500">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={sendingOtp || countdown > 0}
+                  className="px-3.5 py-2.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed shrink-0"
+                  title="Nhận mã OTP qua Gmail để xác thực tài khoản"
+                >
+                  {sendingOtp ? (
+                    <div className="w-3.5 h-3.5 border-2 border-teal-800 border-t-transparent rounded-full animate-spin" />
+                  ) : countdown > 0 ? (
+                    <>
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{countdown}s</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>{otpSent ? 'Gửi lại mã' : 'Lấy mã OTP'}</span>
+                    </>
+                  )}
+                </button>
               </div>
               {errors.email && (
-                <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center gap-1 animate-in fade-in">
+                <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3 shrink-0" /> {errors.email.message}
                 </p>
               )}
             </div>
 
-            {/* 4. Số điện thoại */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-gray-700">
-                  Số điện thoại <span className="text-gray-400 font-normal">(Tùy chọn)</span>
+            {/* Ô nhập mã xác thực OTP */}
+            {otpSent && (
+              <div className="p-3.5 rounded-xl bg-teal-50/50 border border-teal-200 animate-fadeIn">
+                <label className="block text-xs font-semibold text-teal-900 uppercase tracking-wider mb-1.5">
+                  Mã xác thực OTP (6 chữ số)
                 </label>
-                {touchedFields.phone && !errors.phone && phoneValue && (
-                  <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-0.5">
-                    <CheckCircle2 className="w-3 h-3" /> Hợp lệ
-                  </span>
-                )}
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-teal-600">
+                    <KeyRound className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    {...register('otp')}
+                    placeholder="Nhập 6 số gửi về Gmail của bạn"
+                    className="w-full pl-10 pr-4 py-2 text-sm font-mono tracking-widest text-slate-800 bg-white border border-teal-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-200"
+                  />
+                </div>
+                <p className="text-[11px] text-teal-700 mt-1">
+                  Mã xác thực đã được gửi tới <strong>{emailValue}</strong>. Vui lòng kiểm tra cả hộp thư chính và thư rác (Spam).
+                </p>
               </div>
+            )}
+
+            {/* Số điện thoại */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                Số điện thoại liên lạc
+              </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                  <Phone className="w-4 h-4 text-teal-700" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Phone className="w-4 h-4" />
                 </div>
                 <input
                   type="tel"
                   {...register('phone')}
-                  placeholder="VD: 0914066662 (10 số di động VN)"
-                  className={getInputClassName('phone', phoneValue)}
+                  placeholder="0901234567 (Tùy chọn)"
+                  className={getInputClassName('phone', watch('phone'))}
                 />
-                {errors.phone && (
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-red-500">
-                    <AlertCircle className="w-4 h-4" />
+                {touchedFields.phone && !errors.phone && watch('phone') && (
+                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-emerald-500">
+                    <CheckCircle2 className="w-4 h-4" />
                   </div>
                 )}
               </div>
               {errors.phone && (
-                <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center gap-1 animate-in fade-in">
+                <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3 shrink-0" /> {errors.phone.message}
                 </p>
               )}
             </div>
 
-            {/* 5. Mật khẩu */}
+            {/* Mật khẩu */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-gray-700">
-                  Mật khẩu <span className="text-red-500">*</span>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Mật khẩu <span className="text-rose-500">*</span>
                 </label>
                 {passwordValue && (
-                  <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
                     passwordValue.length >= 6 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
                   }`}>
                     {passwordValue.length >= 6 ? 'Đạt độ dài' : `${passwordValue.length}/6 ký tự`}
@@ -303,8 +362,8 @@ export const RegisterPage = () => {
                 )}
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                  <Lock className="w-4 h-4 text-teal-700" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Lock className="w-4 h-4" />
                 </div>
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -315,92 +374,108 @@ export const RegisterPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-teal-700 transition cursor-pointer"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                   title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center gap-1 animate-in fade-in">
+                <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3 shrink-0" /> {errors.password.message}
                 </p>
               )}
             </div>
 
-            {/* 6. Xác nhận mật khẩu */}
+            {/* Xác nhận mật khẩu */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-gray-700">
-                  Xác nhận mật khẩu <span className="text-red-500">*</span>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                  Xác nhận mật khẩu <span className="text-rose-500">*</span>
                 </label>
                 {touchedFields.confirmPassword && !errors.confirmPassword && confirmPasswordValue && (
-                  <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-0.5">
+                  <span className="text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" /> Trùng khớp
                   </span>
                 )}
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                  <Lock className="w-4 h-4 text-teal-700" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Lock className="w-4 h-4" />
                 </div>
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   {...register('confirmPassword')}
-                  placeholder="Nhập lại mật khẩu ở trên"
+                  placeholder="Nhập lại chính xác mật khẩu trên"
                   className={getInputClassName('confirmPassword', confirmPasswordValue)}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-teal-700 transition cursor-pointer"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                   title={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                 >
                   {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               {errors.confirmPassword && (
-                <p className="text-[11px] text-red-600 font-medium mt-1 flex items-center gap-1 animate-in fade-in">
+                <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
                   <AlertCircle className="w-3 h-3 shrink-0" /> {errors.confirmPassword.message}
                 </p>
               )}
             </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-4 py-3 px-4 bg-gradient-to-r from-teal-800 to-emerald-700 hover:from-teal-900 hover:to-emerald-800 text-white font-bold rounded-2xl text-xs sm:text-sm shadow-md shadow-teal-900/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
-            >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <UserPlus className="w-4 h-4" />
-                  <span>Hoàn Tất Đăng Ký Tài Khoản</span>
-                </>
-              )}
-            </button>
+            {/* Nút Đăng ký */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-teal-800 hover:bg-teal-900 active:scale-[0.99] text-white font-semibold rounded-xl shadow-lg shadow-teal-900/20 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Đang tạo tài khoản...</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4" />
+                    <span>Đăng Ký Tài Khoản</span>
+                  </>
+                )}
+              </button>
+            </div>
           </form>
 
-          {/* Link sang Đăng nhập */}
-          <div className="mt-5 pt-4 border-t border-gray-100 text-center">
-            <p className="text-xs text-gray-600">
-              Đã có tài khoản MediEquip?{' '}
+          {/* Chuyển sang Đăng nhập */}
+          <div className="mt-6 pt-6 border-t border-slate-100 text-center">
+            <p className="text-sm text-slate-500">
+              Đã có tài khoản y tế?{' '}
               <Link
                 to="/login"
-                className="font-bold text-teal-700 hover:text-teal-900 hover:underline inline-flex items-center gap-1"
+                className="font-semibold text-teal-800 hover:text-teal-900 transition-colors inline-flex items-center gap-1 ml-1"
               >
-                <ArrowLeft className="w-3 h-3" /> Đăng nhập ngay
+                Đăng nhập ngay
               </Link>
             </p>
           </div>
+
+          {/* Nút quay lại trang chủ */}
+          <div className="mt-4 text-center">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Quay lại trang chủ</span>
+            </Link>
+          </div>
+
         </div>
+
       </div>
     </div>
   );
 };
 
 export default RegisterPage;
-
-

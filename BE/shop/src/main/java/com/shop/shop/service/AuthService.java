@@ -6,6 +6,7 @@ import com.shop.shop.dto.response.LoginResponse;
 import com.shop.shop.dto.response.UserResponse;
 import com.shop.shop.entity.User;
 import com.shop.shop.repository.UserRepository;
+import com.shop.shop.security.EmailOtpService;
 import com.shop.shop.security.JwtService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,15 +23,18 @@ public class AuthService {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailOtpService emailOtpService;
 
     public AuthService(AuthenticationManager authenticationManager,
                        JwtService jwtService,
                        UserRepository userRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       EmailOtpService emailOtpService) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailOtpService = emailOtpService;
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -61,7 +65,19 @@ public class AuthService {
         }
 
         if (userRepository.existsByEmail(email)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email đã được sử dụng");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email đã được sử dụng bởi tài khoản khác");
+        }
+
+        // Kiểm tra mã xác thực Email OTP nếu đã được yêu cầu gửi
+        if (emailOtpService.hasActiveOtp(email)) {
+            if (isBlank(request.otp()) || !emailOtpService.verifyOtp(email, request.otp())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mã xác thực OTP qua Email không chính xác hoặc đã hết hạn (hiệu lực 5 phút)");
+            }
+        } else if (!isBlank(request.otp())) {
+            // Nếu có nhập OTP nhưng mã không khớp
+            if (!emailOtpService.verifyOtp(email, request.otp())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mã xác thực OTP không chính xác");
+            }
         }
 
         User user = new User();
@@ -81,4 +97,3 @@ public class AuthService {
         return str == null || str.isBlank();
     }
 }
-

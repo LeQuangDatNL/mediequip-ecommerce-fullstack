@@ -4,10 +4,8 @@ import com.shop.shop.dto.request.LoginRequest;
 import com.shop.shop.dto.request.RegisterRequest;
 import com.shop.shop.dto.response.LoginResponse;
 import com.shop.shop.dto.response.UserResponse;
-import com.shop.shop.security.CaptchaService;
-import com.shop.shop.security.LoginAttemptService;
-import com.shop.shop.security.RateLimitService;
-import com.shop.shop.security.TokenBlacklistService;
+import com.shop.shop.repository.UserRepository;
+import com.shop.shop.security.*;
 import com.shop.shop.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -34,23 +32,67 @@ public class AuthController {
     private final CaptchaService captchaService;
     private final LoginAttemptService loginAttemptService;
     private final RateLimitService rateLimitService;
+    private final EmailOtpService emailOtpService;
+    private final UserRepository userRepository;
 
     public AuthController(AuthService authService,
                           TokenBlacklistService tokenBlacklistService,
                           CaptchaService captchaService,
                           LoginAttemptService loginAttemptService,
-                          RateLimitService rateLimitService) {
+                          RateLimitService rateLimitService,
+                          EmailOtpService emailOtpService,
+                          UserRepository userRepository) {
         this.authService = authService;
         this.tokenBlacklistService = tokenBlacklistService;
         this.captchaService = captchaService;
         this.loginAttemptService = loginAttemptService;
         this.rateLimitService = rateLimitService;
+        this.emailOtpService = emailOtpService;
+        this.userRepository = userRepository;
     }
 
     @GetMapping("/captcha")
     @Operation(summary = "Get a new math CAPTCHA challenge")
     public ResponseEntity<Map<String, Object>> getCaptcha() {
         return ResponseEntity.ok(captchaService.generateChallenge());
+    }
+
+    @PostMapping("/send-otp")
+    @Operation(summary = "Gửi mã xác thực OTP 6 số qua Gmail khi đăng ký tài khoản")
+    public ResponseEntity<Map<String, Object>> sendRegisterOtp(
+            @RequestParam String email,
+            HttpServletRequest httpRequest
+    ) {
+        String clientIp = getClientIp(httpRequest);
+        if (email == null || email.isBlank() || !email.contains("@")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Địa chỉ email không hợp lệ");
+        }
+
+        String cleanEmail = email.trim().toLowerCase();
+
+        // Kiểm tra xem email đã được đăng ký chưa
+        if (userRepository.existsByEmail(cleanEmail)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email này đã được sử dụng cho một tài khoản khác");
+        }
+
+        // Chống spam: Tối đa 3 lần gửi OTP / 5 phút, giãn cách 45s mỗi lần
+        if (!rateLimitService.allowRequest("otp_" + cleanEmail, 3, 300, 45) ||
+            !rateLimitService.allowRequest("otp_ip_" + clientIp, 5, 300, 30)) {
+            long remaining = rateLimitService.getRemainingCooldownSeconds("otp_" + cleanEmail, 45);
+            String msg = remaining > 0
+                    ? "Vui lòng đợi " + remaining + " giây trước khi yêu cầu gửi lại mã OTP."
+                    : "Bạn đã gửi quá nhiều yêu cầu mã OTP. Vui lòng thử lại sau 5 phút.";
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, msg);
+        }
+
+        emailOtpService.generateAndSendOtp(cleanEmail);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", HttpStatus.OK.value());
+        response.put("message", "Mã xác thực OTP (6 chữ số) đã được gửi tới email " + cleanEmail + ". Mã có hiệu lực trong 5 phút.");
+        response.put("expiresInSeconds", 300);
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/register")

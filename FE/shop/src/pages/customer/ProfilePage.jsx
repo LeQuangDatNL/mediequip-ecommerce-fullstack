@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import addressService from '../../services/addressService';
+import userService from '../../services/userService';
 import AddressModal from '../../components/AddressModal';
 import MapAddressPicker from '../../components/MapAddressPicker';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { profileUpdateSchema, changePasswordSchema } from '../../utils/validationSchemas';
 import {
   User,
   Mail,
@@ -13,26 +17,79 @@ import {
   Edit2,
   Trash2,
   CheckCircle2,
-  Sparkles,
-  Navigation,
-  Building,
-  Home
+  Lock,
+  Eye,
+  EyeOff,
+  Save,
+  AlertCircle,
+  KeyRound,
+  ShieldCheck,
+  UserCheck
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const ProfilePage = () => {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'password' | 'addresses'
 
+  // Loading states
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  // Password visibility states
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+
+  // Address states
   const [addresses, setAddresses] = useState([]);
   const [loadingAddresses, setLoadingAddresses] = useState(true);
-
-  // Address Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
-
-  // Standalone Map Picker
   const [mapPickerOpen, setMapPickerOpen] = useState(false);
 
+  // 1. React Hook Form cho Cập nhật Thông tin cá nhân
+  const {
+    register: registerProfile,
+    handleSubmit: handleSubmitProfile,
+    reset: resetProfile,
+    formState: { errors: profileErrors, isDirty: isProfileDirty }
+  } = useForm({
+    resolver: zodResolver(profileUpdateSchema),
+    defaultValues: {
+      fullName: user?.fullName || '',
+      email: user?.email || '',
+      phone: user?.phone || ''
+    }
+  });
+
+  // 2. React Hook Form cho Đổi mật khẩu
+  const {
+    register: registerPassword,
+    handleSubmit: handleSubmitPassword,
+    reset: resetPasswordForm,
+    formState: { errors: passwordErrors }
+  } = useForm({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: '',
+      newPassword: '',
+      confirmNewPassword: ''
+    }
+  });
+
+  // Cập nhật giá trị ban đầu cho Form Profile khi user thay đổi
+  useEffect(() => {
+    if (user) {
+      resetProfile({
+        fullName: user.fullName || '',
+        email: user.email || '',
+        phone: user.phone || ''
+      });
+    }
+  }, [user, resetProfile]);
+
+  // Tải danh sách địa chỉ
   const fetchAddresses = useCallback(async () => {
     setLoadingAddresses(true);
     try {
@@ -49,6 +106,53 @@ export const ProfilePage = () => {
     fetchAddresses();
   }, [fetchAddresses]);
 
+  // Xử lý lưu thông tin cá nhân
+  const onUpdateProfile = async (data) => {
+    setSavingProfile(true);
+    try {
+      const updatedUser = await userService.updateMyProfile(data);
+      toast.success('Cập nhật thông tin cá nhân thành công!');
+      
+      // Cập nhật lại thông tin trong localStorage
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const newUser = { ...currentUser, ...updatedUser };
+      localStorage.setItem('user', JSON.stringify(newUser));
+
+      // Reset form với giá trị mới
+      resetProfile({
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+        phone: updatedUser.phone || ''
+      });
+    } catch (err) {
+      console.error('Lỗi cập nhật hồ sơ:', err);
+      const msg = err.response?.data?.message || 'Không thể cập nhật thông tin cá nhân';
+      toast.error(msg);
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  // Xử lý đổi mật khẩu
+  const onChangePassword = async (data) => {
+    setSavingPassword(true);
+    try {
+      await userService.changePassword({
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword
+      });
+      toast.success('Đổi mật khẩu thành công!');
+      resetPasswordForm();
+    } catch (err) {
+      console.error('Lỗi đổi mật khẩu:', err);
+      const msg = err.response?.data?.message || 'Mật khẩu hiện tại không chính xác';
+      toast.error(msg);
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
+  // Quản lý địa chỉ
   const handleOpenAdd = () => {
     setEditingAddress(null);
     setModalOpen(true);
@@ -85,7 +189,6 @@ export const ProfilePage = () => {
     }
   };
 
-  // Quick direct add from Map Picker
   const handleMapSelectDirect = (location) => {
     setEditingAddress({
       recipientName: user?.fullName || user?.username || '',
@@ -100,202 +203,437 @@ export const ProfilePage = () => {
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-teal-700 to-teal-900 flex items-center justify-center text-white font-black text-2xl shadow-md">
-            {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">{user?.fullName || user?.username}</h1>
-            <p className="text-xs text-gray-500 mt-0.5">Tài khoản khách hàng thành viên MediEquip</p>
-            <span className="inline-block mt-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
-              {user?.role === 'ADMIN' ? '👑 Quản Trị Viên' : '👤 Khách Hàng Thân Thiết'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Grid: 1. Thông tin cá nhân & 2. Sổ địa chỉ giao hàng */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Cột trái: Thông tin tài khoản */}
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-xs space-y-4 h-fit">
-          <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">
-            <User className="w-4 h-4 text-teal-700" />
-            <span>Thông Tin Cá Nhân</span>
-          </h2>
-
-          <div className="space-y-3 text-xs">
-            <div>
-              <span className="text-gray-400 block text-[11px]">Tên đăng nhập:</span>
-              <span className="font-semibold text-gray-800">{user?.username}</span>
+    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto space-y-6">
+        
+        {/* Header Profile Summary */}
+        <div className="bg-gradient-to-r from-teal-800 to-teal-950 rounded-2xl p-6 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="w-18 h-18 rounded-2xl bg-white/10 border-2 border-white/20 flex items-center justify-center text-white text-3xl font-bold shadow-inner">
+              {user?.fullName?.charAt(0)?.toUpperCase() || user?.username?.charAt(0)?.toUpperCase() || 'U'}
             </div>
             <div>
-              <span className="text-gray-400 block text-[11px]">Email liên kết:</span>
-              <span className="font-semibold text-gray-800 flex items-center gap-1 mt-0.5">
-                <Mail className="w-3.5 h-3.5 text-gray-400" />
-                {user?.email || 'Chưa cập nhật'}
-              </span>
-            </div>
-            <div>
-              <span className="text-gray-400 block text-[11px]">Số điện thoại:</span>
-              <span className="font-semibold text-gray-800 flex items-center gap-1 mt-0.5">
-                <Phone className="w-3.5 h-3.5 text-gray-400" />
-                {user?.phone || 'Chưa cập nhật'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Cột phải: Sổ địa chỉ giao hàng (Map API & GPS Geolocation) */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-gray-100 shadow-xs space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
-            <div>
-              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-teal-700" />
-                <span>Sổ Địa Chỉ Giao Hàng & Định Vị Map</span>
-              </h2>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Quản lý địa chỉ nhận thiết bị y tế hoặc định vị GPS vị trí của bạn trên bản đồ.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setMapPickerOpen(true)}
-                className="px-3.5 py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                title="Mở bản đồ chọn vị trí"
-              >
-                <Navigation className="w-3.5 h-3.5 text-teal-700" />
-                <span>Chọn trên Map</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleOpenAdd}
-                className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Thêm địa chỉ</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Danh sách địa chỉ */}
-          {loadingAddresses ? (
-            <div className="py-12 text-center space-y-2">
-              <div className="w-7 h-7 border-3 border-teal-200 border-t-teal-700 rounded-full animate-spin mx-auto"></div>
-              <p className="text-xs text-gray-400">Đang tải sổ địa chỉ...</p>
-            </div>
-          ) : addresses.length === 0 ? (
-            <div className="py-12 text-center space-y-4 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 p-6">
-              <MapPin className="w-10 h-10 text-gray-300 mx-auto" />
-              <div>
-                <p className="text-sm font-bold text-gray-700">Chưa có địa chỉ giao hàng nào</p>
-                <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
-                  Hãy thêm địa chỉ nhận hàng hoặc định vị vị trí hiện tại của bạn để nhận thiết bị y tế nhanh nhất!
-                </p>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold">{user?.fullName || user?.username || 'Người dùng'}</h1>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${
+                  user?.role === 'ADMIN' ? 'bg-amber-400 text-amber-950' : 'bg-teal-500/30 text-teal-200 border border-teal-400/30'
+                }`}>
+                  {user?.role === 'ADMIN' ? 'Quản trị viên' : 'Khách hàng'}
+                </span>
               </div>
-              <button
-                type="button"
-                onClick={handleOpenAdd}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition shadow-xs"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Thêm địa chỉ đầu tiên</span>
-              </button>
+              <p className="text-teal-200/80 text-sm mt-0.5">@{user?.username} • Thành viên hệ thống Y Tế Kim Liên</p>
             </div>
-          ) : (
-            <div className="space-y-3.5">
-              {addresses.map((addr) => {
-                const isDefault = addr.defaultAddress;
-                return (
-                  <div
-                    key={addr.id}
-                    className={`p-4 sm:p-5 rounded-2xl border transition-all ${
-                      isDefault
-                        ? 'bg-teal-50/40 border-teal-300 shadow-xs'
-                        : 'bg-white border-gray-200 hover:border-gray-300'
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-1.5 flex flex-wrap sm:flex-nowrap gap-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab('profile')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium text-sm transition-all ${
+              activeTab === 'profile'
+                ? 'bg-teal-800 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            <span>Thông tin cá nhân</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('password')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium text-sm transition-all ${
+              activeTab === 'password'
+                ? 'bg-teal-800 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <KeyRound className="w-4 h-4" />
+            <span>Đổi mật khẩu</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('addresses')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium text-sm transition-all ${
+              activeTab === 'addresses'
+                ? 'bg-teal-800 text-white shadow-sm'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            <MapPin className="w-4 h-4" />
+            <span>Sổ địa chỉ ({addresses.length})</span>
+          </button>
+        </div>
+
+        {/* TAB 1: THÔNG TIN CÁ NHÂN */}
+        {activeTab === 'profile' && (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">Chỉnh sửa hồ sơ cá nhân</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Cập nhật họ tên, số điện thoại liên lạc và email nhận thông báo</p>
+              </div>
+              <UserCheck className="w-6 h-6 text-teal-700" />
+            </div>
+
+            <form onSubmit={handleSubmitProfile(onUpdateProfile)} className="p-6 space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                
+                {/* Username (Read only) */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
+                    Tên đăng nhập
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      disabled
+                      value={user?.username || ''}
+                      className="w-full bg-slate-100 border border-slate-200 text-slate-500 rounded-xl px-4 py-2.5 text-sm cursor-not-allowed font-mono"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">Tên đăng nhập cố định không thể thay đổi</p>
+                </div>
+
+                {/* Full Name */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Họ và tên <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      {...registerProfile('fullName')}
+                      placeholder="Ví dụ: Nguyễn Văn An"
+                      className={`w-full border rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 transition-all ${
+                        profileErrors.fullName
+                          ? 'border-rose-400 focus:ring-rose-200 bg-rose-50/20'
+                          : 'border-slate-300 focus:border-teal-700 focus:ring-teal-100'
+                      }`}
+                    />
+                  </div>
+                  {profileErrors.fullName && (
+                    <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5" /> {profileErrors.fullName.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Địa chỉ Email <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      {...registerProfile('email')}
+                      placeholder="name@example.com"
+                      className={`w-full border rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 transition-all ${
+                        profileErrors.email
+                          ? 'border-rose-400 focus:ring-rose-200 bg-rose-50/20'
+                          : 'border-slate-300 focus:border-teal-700 focus:ring-teal-100'
+                      }`}
+                    />
+                  </div>
+                  {profileErrors.email && (
+                    <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5" /> {profileErrors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Số điện thoại di động
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      {...registerProfile('phone')}
+                      placeholder="Ví dụ: 0901234567"
+                      className={`w-full border rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 transition-all ${
+                        profileErrors.phone
+                          ? 'border-rose-400 focus:ring-rose-200 bg-rose-50/20'
+                          : 'border-slate-300 focus:border-teal-700 focus:ring-teal-100'
+                      }`}
+                    />
+                  </div>
+                  {profileErrors.phone && (
+                    <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5" /> {profileErrors.phone.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={savingProfile || !isProfileDirty}
+                  className="flex items-center gap-2 bg-teal-800 hover:bg-teal-900 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium px-6 py-2.5 rounded-xl shadow-sm hover:shadow transition-all"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{savingProfile ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* TAB 2: ĐỔI MẬT KHẨU */}
+        {activeTab === 'password' && (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden max-w-2xl">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">Đổi mật khẩu tài khoản</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Bảo vệ tài khoản bằng mật khẩu mạnh có ít nhất 6 ký tự</p>
+              </div>
+              <ShieldCheck className="w-6 h-6 text-teal-700" />
+            </div>
+
+            <form onSubmit={handleSubmitPassword(onChangePassword)} className="p-6 space-y-4">
+              
+              {/* Current Password */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Mật khẩu hiện tại <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    {...registerPassword('currentPassword')}
+                    placeholder="Nhập mật khẩu đang dùng"
+                    className={`w-full border rounded-xl pl-4 pr-11 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 transition-all ${
+                      passwordErrors.currentPassword
+                        ? 'border-rose-400 focus:ring-rose-200 bg-rose-50/20'
+                        : 'border-slate-300 focus:border-teal-700 focus:ring-teal-100'
                     }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                      <div className="space-y-1.5 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-gray-900 text-sm">
-                            {addr.recipientName}
-                          </span>
-                          <span className="text-xs text-gray-400 font-medium">|</span>
-                          <span className="text-xs text-gray-600 font-semibold">{addr.phone}</span>
-                          {isDefault && (
-                            <span className="px-2 py-0.5 bg-teal-700 text-white text-[10px] font-bold rounded-md shadow-2xs">
-                              Mặc định
-                            </span>
-                          )}
+                    {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {passwordErrors.currentPassword && (
+                  <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" /> {passwordErrors.currentPassword.message}
+                  </p>
+                )}
+              </div>
+
+              {/* New Password */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Mật khẩu mới <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    {...registerPassword('newPassword')}
+                    placeholder="Tối thiểu 6 ký tự"
+                    className={`w-full border rounded-xl pl-4 pr-11 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 transition-all ${
+                      passwordErrors.newPassword
+                        ? 'border-rose-400 focus:ring-rose-200 bg-rose-50/20'
+                        : 'border-slate-300 focus:border-teal-700 focus:ring-teal-100'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {passwordErrors.newPassword && (
+                  <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" /> {passwordErrors.newPassword.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Confirm New Password */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Xác nhận mật khẩu mới <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmNewPassword ? 'text' : 'password'}
+                    {...registerPassword('confirmNewPassword')}
+                    placeholder="Nhập lại mật khẩu mới"
+                    className={`w-full border rounded-xl pl-4 pr-11 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 transition-all ${
+                      passwordErrors.confirmNewPassword
+                        ? 'border-rose-400 focus:ring-rose-200 bg-rose-50/20'
+                        : 'border-slate-300 focus:border-teal-700 focus:ring-teal-100'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showConfirmNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {passwordErrors.confirmNewPassword && (
+                  <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" /> {passwordErrors.confirmNewPassword.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={savingPassword}
+                  className="flex items-center gap-2 bg-teal-800 hover:bg-teal-900 disabled:bg-slate-300 text-white font-medium px-6 py-2.5 rounded-xl shadow-sm hover:shadow transition-all"
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>{savingPassword ? 'Đang cập nhật...' : 'Cập nhật mật khẩu'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* TAB 3: SỔ ĐỊA CHỈ */}
+        {activeTab === 'addresses' && (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">Sổ địa chỉ giao hàng</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Quản lý các địa chỉ nhận hàng để thanh toán và báo giá nhanh hơn</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMapPickerOpen(true)}
+                  className="flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-teal-700" />
+                  <span>Chọn trên bản đồ</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenAdd}
+                  className="flex items-center gap-2 px-4 py-2 bg-teal-800 hover:bg-teal-900 text-white text-xs font-semibold rounded-xl shadow-sm transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Thêm địa chỉ</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {loadingAddresses ? (
+                <div className="py-12 text-center text-slate-400 text-sm">Đang tải danh sách địa chỉ...</div>
+              ) : addresses.length === 0 ? (
+                <div className="py-12 text-center">
+                  <MapPin className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-slate-600">Bạn chưa lưu địa chỉ giao hàng nào</p>
+                  <p className="text-xs text-slate-400 mt-1">Thêm địa chỉ ngay để tiết kiệm thời gian khi đặt hàng</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {addresses.map((addr) => (
+                    <div
+                      key={addr.id}
+                      className={`relative border rounded-xl p-4 transition-all ${
+                        addr.defaultAddress
+                          ? 'border-teal-600 bg-teal-50/20 shadow-sm'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-800 text-sm">{addr.recipientName}</span>
+                            {addr.defaultAddress && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 border border-teal-200">
+                                Mặc định
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 font-mono mt-0.5">{addr.phone}</p>
                         </div>
 
-                        <p className="text-xs text-gray-700 font-medium">
-                          {addr.addressDetail}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {addr.ward}, {addr.district}, {addr.province}
-                        </p>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEdit(addr)}
+                            className="p-1.5 text-slate-400 hover:text-teal-700 rounded-lg hover:bg-slate-100"
+                            title="Chỉnh sửa"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAddress(addr.id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100"
+                            title="Xóa"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2 self-end sm:self-start shrink-0">
-                        {!isDefault && (
+                      <p className="text-xs text-slate-600 mt-2.5 leading-relaxed">
+                        {addr.addressDetail}, {addr.ward}, {addr.district}, {addr.province}
+                      </p>
+
+                      {!addr.defaultAddress && (
+                        <div className="mt-3 pt-3 border-t border-slate-100 flex justify-end">
                           <button
                             type="button"
                             onClick={() => handleSetDefault(addr)}
-                            className="text-[11px] font-bold text-teal-700 hover:underline cursor-pointer px-2 py-1"
+                            className="text-xs font-semibold text-teal-700 hover:text-teal-900"
                           >
-                            Thiết lập mặc định
+                            Đặt làm mặc định
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEdit(addr)}
-                          className="p-1.5 text-gray-500 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition cursor-pointer"
-                          title="Sửa địa chỉ"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteAddress(addr.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition cursor-pointer"
-                          title="Xóa địa chỉ"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                );
-              })}
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
       </div>
 
-      {/* Modal Quản lý Form Địa Chỉ */}
-      <AddressModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        address={editingAddress}
-        onSaved={fetchAddresses}
-      />
+      {/* Address Edit/Create Modal */}
+      {modalOpen && (
+        <AddressModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSuccess={() => {
+            setModalOpen(false);
+            fetchAddresses();
+          }}
+          initialData={editingAddress}
+        />
+      )}
 
-      {/* Standalone Map Picker Modal */}
-      <MapAddressPicker
-        isOpen={mapPickerOpen}
-        onClose={() => setMapPickerOpen(false)}
-        onSelectAddress={handleMapSelectDirect}
-      />
+      {/* Map Picker Modal */}
+      {mapPickerOpen && (
+        <MapAddressPicker
+          isOpen={mapPickerOpen}
+          onClose={() => setMapPickerOpen(false)}
+          onSelectLocation={handleMapSelectDirect}
+        />
+      )}
     </div>
   );
 };
 
 export default ProfilePage;
-

@@ -24,5 +24,7 @@ public record RegisterRequest(
         String fullName,
 
         @Pattern(regexp = "^$|^(0[3|5|7|8|9])+([0-9]{8})$", message = "Số điện thoại di động không hợp lệ (VD: 0901234567)")
-        String phone
+        String phone,
+
+        String otp
 ) {}

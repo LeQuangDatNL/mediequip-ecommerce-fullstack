@@ -7,6 +7,14 @@ export const authService = {
     return response.data; // { captchaId, question, expiresInSeconds }
   },
 
+  // Gửi mã xác thực OTP qua Gmail khi đăng ký
+  async sendRegisterOtp(email) {
+    const response = await apiClient.post('/api/auth/send-otp', null, {
+      params: { email: email.trim() }
+    });
+    return response.data; // { message, expiresInSeconds }
+  },
+
   // Đăng nhập
   async login(username, password, captchaId = null, captchaAnswer = null) {
     const payload = { username, password };
@@ -42,4 +50,3 @@ export const authService = {
 };
 
 export default authService;
-

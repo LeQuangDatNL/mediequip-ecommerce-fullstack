@@ -1,6 +1,7 @@
 # 📖 TÀI LIỆU HỆ THỐNG RESTful API (E-COMMERCE THIẾT BỊ Y TẾ)
 
-* **Base URL:** `http://localhost:8080`
+* **Base URL Backend (Local):** `http://localhost:8080`
+* **Live Demo Frontend (Vercel):** [https://ecommerce-springboot-react-one.vercel.app/](https://ecommerce-springboot-react-one.vercel.app/)
 * **Swagger UI Trực quan:** `http://localhost:8080/swagger-ui/index.html`
 * **OpenAPI 3.0 Spec:** `http://localhost:8080/v3/api-docs`
 * **Content-Type:** `application/json` (hoặc `multipart/form-data` khi tải file)
@@ -51,7 +52,19 @@
 }
 ```
 
-### 1.2. Đăng ký tài khoản mới (Register)
+### 1.2. Gửi mã xác thực OTP qua Gmail khi đăng ký
+* **Endpoint:** `POST /api/auth/send-otp?email=user@example.com`
+* **Quyền:** Public (Chống spam: Tối đa 3 lần / 5 phút, cooldown 45s)
+* **Response (200 OK):**
+```json
+{
+  "status": 200,
+  "message": "Mã xác thực OTP (6 chữ số) đã được gửi tới email user@example.com. Mã có hiệu lực trong 5 phút.",
+  "expiresInSeconds": 300
+}
+```
+
+### 1.3. Đăng ký tài khoản mới (Register)
 * **Endpoint:** `POST /api/auth/register`
 * **Quyền:** Public (Rate limit: tối đa 5 lần / 15 phút từ 1 IP)
 * **Request Body:**
@@ -61,7 +74,8 @@
   "email": "nguyenvana@gmail.com",
   "password": "password123",
   "fullName": "Nguyễn Văn An",
-  "phone": "0901000003"
+  "phone": "0901000003",
+  "otp": "123456"
 }
 ```
 * **Response (201 Created):**
@@ -78,7 +92,7 @@
 }
 ```
 
-### 1.3. Đăng nhập (Login)
+### 1.4. Đăng nhập (Login)
 * **Endpoint:** `POST /api/auth/login`
 * **Quyền:** Public
 * **Bảo vệ:** Tự động yêu cầu CAPTCHA khi sai $\ge 3$ lần; Tạm khóa 15 phút khi sai $\ge 5$ lần.
@@ -99,14 +113,14 @@
 }
 ```
 
-### 1.4. Đăng xuất & Hủy Token (Logout)
+### 1.5. Đăng xuất & Hủy Token (Logout)
 * **Endpoint:** `POST /api/auth/logout`
 * **Quyền:** Authenticated
 * **Headers:** `Authorization: Bearer <token>`
 * **Mô tả:** Đưa token vào `TokenBlacklistService` để vô hiệu hóa tức thì.
 * **Response:** `204 No Content`
 
-### 1.5. Lấy phiên đăng nhập hiện tại (Me)
+### 1.6. Lấy phiên đăng nhập hiện tại (Me)
 * **Endpoint:** `GET /api/auth/me`
 * **Quyền:** Authenticated (`CUSTOMER` hoặc `ADMIN`)
 * **Headers:** `Authorization: Bearer <token>`
@@ -133,16 +147,18 @@
 }
 ```
 
-### 2.2. Cập nhật hồ sơ cá nhân
+### 2.2. Cập nhật thông tin cá nhân (Tên, Số điện thoại, Email)
 * **Endpoint:** `PUT /api/users/me`
 * **Quyền:** Authenticated
 * **Request Body:**
 ```json
 {
   "fullName": "Nguyễn Văn An (Đã sửa)",
+  "email": "nguyenvana@gmail.com",
   "phone": "0909999888"
 }
 ```
+* **Response (200 OK):** Thông tin người dùng sau khi cập nhật.
 
 ### 2.3. Đổi mật khẩu
 * **Endpoint:** `PUT /api/users/me/password`
@@ -170,10 +186,10 @@
     "id": 1,
     "recipientName": "Nguyễn Văn An",
     "phone": "0901000003",
-    "province": "Hà Nội",
-    "district": "Cầu Giấy",
-    "ward": "Dịch Vọng Hậu",
-    "addressDetail": "Số 18, Ngõ 86 Phố Duy Tân",
+    "province": "TP. Hồ Chí Minh",
+    "district": "Quận Tân Phú",
+    "ward": "Phường Tân Quý",
+    "addressDetail": "7/54 Dương Thiệu Tước",
     "defaultAddress": true,
     "createdAt": "2026-10-01T08:00:00"
   }
@@ -189,8 +205,8 @@
   "recipientName": "Nguyễn Văn An",
   "phone": "0901000003",
   "province": "TP. Hồ Chí Minh",
-  "district": "Quận 10",
-  "ward": "Phường 12",
+  "district": "Quận Tân Phú",
+  "ward": "Phường Tân Quý",
   "addressDetail": "7/54 Dương Thiệu Tước",
   "defaultAddress": true
 }
@@ -327,7 +343,7 @@
   "fullName": "Nguyễn Văn An",
   "phone": "0901000003",
   "email": "nguyenvana@gmail.com",
-  "shippingAddress": "7/54 Dương Thiệu Tước, Phường Tân Quý, Tân Phú, TP.HCM",
+  "shippingAddress": "7/54 Dương Thiệu Tước, Phường Tân Quý, Quận Tân Phú, TP.HCM",
   "paymentMethod": "COD",
   "note": "Yêu cầu giao giờ hành chính",
   "items": [
@@ -351,7 +367,7 @@
 ### 7.4. Tải file Excel Báo giá cho đơn hàng
 * **Endpoint:** `GET /api/orders/{id}/quotation`
 * **Quyền:** Public / Authenticated
-* **Response:** File Excel `.xlsx` tự động sinh kèm bảng chiết khấu và chữ ký mẫu y tế Kim Liên.
+* **Response:** File Excel `.xlsx` tự động sinh kèm bảng chiết khấu và thông tin y tế Kim Liên.
 
 ---
 

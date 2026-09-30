@@ -1,9 +1,0 @@
-# ===================================================================
-# CẤU HÌNH MÔI TRƯỜNG PHÁT TRIỂN CỤC BỘ (LOCAL DEVELOPMENT PROFILE)
-# Hướng dẫn: Đổi tên hoặc copy file này thành application-dev.properties
-# File application-dev.properties được giấu an toàn bởi .gitignore
-# ===================================================================
-spring.datasource.url=jdbc:mysql://localhost:3306/ecommerce_db?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true
-spring.datasource.username=root
-spring.datasource.password=your_local_mysql_password
-

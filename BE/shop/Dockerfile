@@ -33,4 +33,4 @@ ENV JAVA_OPTS="-Xms128m -Xmx300m -XX:+UseSerialGC -Djava.security.egd=file:/dev/
 ENV PORT=8080
 EXPOSE 8080
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dserver.port=${PORT:-8080} -jar app.jar"]

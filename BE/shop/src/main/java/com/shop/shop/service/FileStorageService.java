@@ -20,14 +20,18 @@ public class FileStorageService {
             if (!Files.exists(uploadDir)) {
                 Files.createDirectories(uploadDir);
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Could not create upload directory", e);
+        } catch (Exception e) {
+            System.err.println("Warning: Could not create upload directory on startup: " + e.getMessage());
         }
     }
 
     public StoredFile storeFile(MultipartFile file) throws IOException {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Cannot store empty file");
+        }
+
+        if (!Files.exists(uploadDir)) {
+            Files.createDirectories(uploadDir);
         }
 
         String originalFilename = file.getOriginalFilename();
@@ -40,7 +44,7 @@ public class FileStorageService {
         Path targetLocation = this.uploadDir.resolve(uniqueFileName);
         Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-        String fileUrl = "http://localhost:8080/uploads/" + uniqueFileName;
+        String fileUrl = "/uploads/" + uniqueFileName;
         String displayName = (originalFilename != null && !originalFilename.isBlank()) ? originalFilename : uniqueFileName;
 
         return new StoredFile(displayName, fileUrl, file.getContentType(), file.getSize());
@@ -48,4 +52,3 @@ public class FileStorageService {
 
     public record StoredFile(String name, String url, String fileType, long size) {}
 }
-

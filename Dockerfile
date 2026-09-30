@@ -18,12 +18,15 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:21-jre-alpine AS runner
 WORKDIR /app
 
-# Tạo non-root user để tăng tính bảo mật
-RUN addgroup -S spring && adduser -S spring -G spring
+# Tạo user spring và cấp quyền sở hữu toàn bộ thư mục /app (bao gồm /app/uploads)
+RUN addgroup -S spring && adduser -S spring -G spring && \
+    mkdir -p /app/uploads && \
+    chown -R spring:spring /app
+
 USER spring:spring
 
 # Sao chép file JAR đã build từ Stage 1
-COPY --from=builder /build/target/*.jar app.jar
+COPY --from=builder --chown=spring:spring /build/target/*.jar app.jar
 
 # Cấu hình JVM tối ưu để ứng dụng chạy mượt mà trong giới hạn 512MB RAM của Render
 ENV JAVA_OPTS="-Xms128m -Xmx300m -XX:+UseSerialGC -Djava.security.egd=file:/dev/./urandom"

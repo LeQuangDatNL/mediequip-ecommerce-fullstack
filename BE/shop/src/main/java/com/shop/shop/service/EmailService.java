@@ -16,10 +16,10 @@ public class EmailService {
     @Autowired(required = false)
     private JavaMailSender mailSender;
 
-    @Value("${spring.mail.username:}")
+    @Value("${spring.mail.username:kimlienshopy@gmail.com}")
     private String fromEmail;
 
-    @Value("${app.admin.notification-email:kimlienmedical@gmail.com}")
+    @Value("${app.admin.notification-email:kimlienshopy@gmail.com}")
     private String adminNotificationEmail;
 
     /**

@@ -69,8 +69,8 @@ export const profileUpdateSchema = z.object({
   email: z
     .string()
     .trim()
-    .min(1, 'Email không được để trống')
-    .email('Định dạng email không hợp lệ (ví dụ: name@example.com)'),
+    .optional()
+    .or(z.literal('')),
   phone: z
     .string()
     .trim()

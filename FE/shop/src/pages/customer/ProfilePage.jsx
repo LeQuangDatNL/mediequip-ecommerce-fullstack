@@ -110,7 +110,11 @@ export const ProfilePage = () => {
   const onUpdateProfile = async (data) => {
     setSavingProfile(true);
     try {
-      const updatedUser = await userService.updateMyProfile(data);
+      const updatedUser = await userService.updateMyProfile({
+        fullName: data.fullName,
+        email: user?.email,
+        phone: data.phone || ''
+      });
       toast.success('Cập nhật thông tin cá nhân thành công!');
       
       // Cập nhật lại thông tin trong localStorage
@@ -322,28 +326,23 @@ export const ProfilePage = () => {
                   )}
                 </div>
 
-                {/* Email */}
+                {/* Email (Cố định, không thể thay đổi) */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Địa chỉ Email <span className="text-rose-500">*</span>
+                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                    <span>Địa chỉ Email</span>
+                    <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 font-medium flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-amber-600" /> Cố định nhận OTP & Thông báo
+                    </span>
                   </label>
                   <div className="relative">
                     <input
                       type="email"
-                      {...registerProfile('email')}
-                      placeholder="name@example.com"
-                      className={`w-full border rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 transition-all ${
-                        profileErrors.email
-                          ? 'border-rose-400 focus:ring-rose-200 bg-rose-50/20'
-                          : 'border-slate-300 focus:border-teal-700 focus:ring-teal-100'
-                      }`}
+                      disabled
+                      value={user?.email || ''}
+                      className="w-full bg-slate-100 border border-slate-200 text-slate-600 font-medium rounded-xl px-4 py-2.5 text-sm cursor-not-allowed"
                     />
                   </div>
-                  {profileErrors.email && (
-                    <p className="text-xs text-rose-500 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3.5 h-3.5" /> {profileErrors.email.message}
-                    </p>
-                  )}
+                  <p className="text-[11px] text-slate-400 mt-1">Email tài khoản dùng để nhận mã OTP và thông báo đơn hàng</p>
                 </div>
 
                 {/* Phone */}

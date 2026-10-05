@@ -23,6 +23,7 @@
 11. [Báo cáo & Thống kê Excel (User Reports)](#11-báo-cáo--thống-kê-excel-user-reports)
 12. [Thư viện Media & Ảnh (Admin Images)](#12-thư-viện-media--ảnh-admin-images)
 13. [Quản lý Người dùng (Admin Users)](#13-quản-lý-người-dùng-admin-users)
+14. [Chuẩn Hóa Mã Trạng Thái HTTP & Bảo Mật Hệ Thống](#14-chuẩn-hóa-mã-trạng-thái-http--bảo-mật-hệ-thống)
 
 ---
 
@@ -456,3 +457,46 @@
 * **Cập nhật quyền hạn / Trạng thái:** `PUT /api/admin/users/{id}`
 * **Khóa / Mở khóa tài khoản:** `PUT /api/admin/users/{id}/status`
 * **Quyền:** Admin
+
+---
+
+## 14. Chuẩn Hóa Mã Trạng Thái HTTP & Bảo Mật Hệ Thống
+
+### 14.1. Bảng mã trạng thái HTTP (HTTP Status Codes)
+
+| Mã HTTP | Tên chuẩn | Ý nghĩa trong hệ thống MediEquip |
+| :--- | :--- | :--- |
+| **`200 OK`** | Thành công | Yêu cầu xử lý thành công, trả về dữ liệu tương ứng. |
+| **`201 CREATED`** | Tạo mới thành công | Tạo mới thực thể (Đăng ký, Đơn hàng, Đánh giá, Yêu cầu tư vấn). |
+| **`204 NO CONTENT`** | Không có nội dung | Thực hiện thao tác thành công (Đăng xuất, Xóa địa chỉ, Xóa ảnh). |
+| **`400 BAD REQUEST`** | Dữ liệu không hợp lệ | Vi phạm validation schema, thiếu trường bắt buộc hoặc sai định dạng. |
+| **`401 UNAUTHORIZED`** | Chưa xác thực | Token JWT hết hạn, thiếu Bearer token hoặc sai tài khoản/mật khẩu. |
+| **`403 FORBIDDEN`** | Không đủ quyền | Khách hàng truy cập vào tài nguyên quản trị viên (Admin Endpoint). |
+| **`404 NOT FOUND`** | Không tìm thấy | ID sản phẩm, đơn hàng, danh mục hoặc tài nguyên không tồn tại. |
+| **`409 CONFLICT`** | Xung đột dữ liệu | Tên đăng nhập hoặc email đã tồn tại trên hệ thống. |
+| **`423 LOCKED`** | Tạm khóa bảo vệ | Tài khoản/IP bị khóa 15 phút do nhập sai mật khẩu quá 5 lần. |
+| **`429 TOO MANY REQUESTS`** | Quá giới hạn tần suất | Gửi OTP quá 3 lần/5 phút hoặc gửi yêu cầu liên tục dưới 45s. |
+| **`500 INTERNAL ERROR`** | Lỗi máy chủ | Lỗi ngoại lệ chưa xử lý, sự cố kết nối cơ sở dữ liệu. |
+
+### 14.2. Cơ chế Bảo mật Đa Tầng (Multi-tier Security Architecture)
+
+1. **JWT Stateless Authentication**:
+   - Khóa ký `HMAC-SHA256` với độ dài tối thiểu 32 ký tự (`APP_JWT_SECRET`).
+   - Thời hạn hiệu lực: 3600 giây (1 giờ).
+   - Cơ chế thu hồi tức thì qua `TokenBlacklistService` khi người dùng gọi `POST /api/auth/logout`.
+
+2. **Cơ chế chống Brute-Force Đăng nhập**:
+   - Sai $\ge 3$ lần: Kích hoạt bài toán CAPTCHA số học thử thách (`GET /api/auth/captcha`).
+   - Sai $\ge 5$ lần: Tạm khóa đăng nhập từ Username & IP trong 900 giây (15 phút).
+
+3. **Cơ chế xác thực Email OTP**:
+   - Mã hóa 6 chữ số ngẫu nhiên qua `SecureRandom`.
+   - Lưu trữ cache `ConcurrentHashMap` với thời gian tồn tại (TTL) 300 giây (5 phút).
+   - Tự động hủy mã ngay sau khi xác thực thành công (One-time usage).
+
+4. **Rate Limiting chống Spam API**:
+   - `POST /api/auth/send-otp`: Tối đa 3 yêu cầu / 5 phút trên mỗi Email; giãn cách tối thiểu 45 giây.
+   - `POST /api/auth/register`: Tối đa 5 yêu cầu / 15 phút trên mỗi địa chỉ IP.
+
+---
+*Tài liệu API được biên soạn và chuẩn hóa phục vụ tích hợp Frontend - Backend cho hệ thống MediEquip Vietnam.*
